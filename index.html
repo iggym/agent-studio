@@ -1,0 +1,2404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Agent Studio — Personas · Memory · Cowork · Code · Muse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer onerror="window.__gsapFailed=true"></script>
+<style>
+:root{
+  --bg:#080808; --bg2:#0D0D0D; --panel:rgba(18,18,18,.72); --panel-solid:#111;
+  --border:#222; --border2:#2c2c2c; --text:#e8e8e8; --muted:#8a8a8a; --dim:#5a5a5a;
+  --accent:#FF4F00; --accent2:#FF5500; --accent-soft:rgba(255,79,0,.14);
+  --ok:#3ddc84; --warn:#ffb020; --err:#ff4d4d; --info:#5ab4ff;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --display:'Bebas Neue',Impact,'Arial Narrow',sans-serif;
+  --radius:10px; --term-h:260px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(1200px 600px at 85% -10%,rgba(255,79,0,.08),transparent 60%),linear-gradient(180deg,var(--bg),var(--bg2));color:var(--text);font:13px/1.5 var(--mono);overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.glass{background:var(--panel);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);border:1px solid var(--border);border-radius:var(--radius)}
+.btn{background:#151515;border:1px solid var(--border2);border-radius:7px;padding:6px 11px;cursor:pointer;transition:border-color .15s,background .15s,color .15s;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600}
+.btn.primary:hover{background:var(--accent2);color:#000}
+.btn.danger:hover{border-color:var(--err);color:var(--err)}
+.btn.sm{padding:3px 8px;font-size:11px}
+.btn.icon{padding:5px 8px}
+.input,select.input,textarea.input{background:#0b0b0b;border:1px solid var(--border2);border-radius:7px;padding:6px 9px;min-width:0}
+.input:focus{border-color:var(--accent);outline:none}
+textarea.input{resize:vertical}
+label.field{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+h1,h2,h3.disp{font-family:var(--display);letter-spacing:.06em;font-weight:400;margin:0}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:999px;font-size:10.5px;border:1px solid var(--border2);text-transform:uppercase;letter-spacing:.05em}
+.muted{color:var(--muted)} .dim{color:var(--dim)}
+.scroll{overflow:auto;scrollbar-width:thin;scrollbar-color:#333 transparent}
+
+/* ---------- App shell ---------- */
+#app{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100vh;gap:8px;padding:8px}
+header.top{display:flex;align-items:center;gap:10px;padding:8px 12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:8px;margin-right:6px}
+.brand h1{font-size:30px;line-height:1;color:#fff}
+.brand h1 span{color:var(--accent)}
+.brand .ver{font-size:10px;color:var(--dim)}
+.hgroup{display:flex;align-items:center;gap:6px;padding-left:10px;border-left:1px solid var(--border)}
+.hgroup .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.spacer{flex:1}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);display:inline-block}
+.status-dot.mock{background:var(--warn)} .status-dot.live{background:var(--ok)}
+main.panes{display:grid;grid-template-columns:minmax(340px,1fr) minmax(360px,1.15fr);gap:8px;min-height:0}
+.pane{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.tabs{display:flex;gap:2px;padding:6px 6px 0;border-bottom:1px solid var(--border);align-items:flex-end}
+.tab{background:transparent;border:1px solid transparent;border-bottom:none;padding:7px 12px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--muted);font-family:var(--display);font-size:17px;letter-spacing:.07em}
+.tab[aria-selected="true"]{color:#fff;background:#141414;border-color:var(--border);box-shadow:inset 0 2px 0 var(--accent)}
+.tabs .tools{margin-left:auto;display:flex;gap:6px;padding-bottom:5px}
+.tabpanel{flex:1;min-height:0;display:flex;flex-direction:column}
+.tabpanel[hidden]{display:none}
+
+/* ---------- Chat ---------- */
+#chatLog{flex:1;padding:14px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#101010;word-wrap:break-word;overflow-wrap:anywhere}
+.msg.user{align-self:flex-end;background:linear-gradient(180deg,#1a1410,#120e0b);border-color:#3a2414;max-width:88%;white-space:pre-wrap}
+.msg.assistant{align-self:stretch}
+.msg .who{font-family:var(--display);letter-spacing:.08em;font-size:14px;color:var(--accent);margin-bottom:4px;display:flex;gap:8px;align-items:center}
+.ctx{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.ctx details{font-size:11px;color:var(--muted)}
+.ctx summary{cursor:pointer}
+.step{border-left:2px solid var(--border2);padding:4px 0 4px 10px;margin:6px 0}
+.step.active{border-left-color:var(--accent)}
+.step-h{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:flex;gap:8px;align-items:center}
+.spin{width:10px;height:10px;border:2px solid var(--accent);border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tool-trace{border:1px solid var(--border2);background:#0a0a0a;border-radius:8px;margin:6px 0;font-size:12px}
+.tool-trace>summary{padding:6px 9px;cursor:pointer;display:flex;gap:8px;align-items:center;list-style:none}
+.tool-trace>summary::-webkit-details-marker{display:none}
+.tool-trace pre{margin:0;padding:8px 10px;border-top:1px solid var(--border);max-height:220px;overflow:auto;white-space:pre-wrap}
+.tool-trace .tname{color:var(--accent)}
+.st-ok{color:var(--ok)} .st-err{color:var(--err)} .st-warn{color:var(--warn)} .st-run{color:var(--info)}
+.art-chip{display:inline-flex;gap:6px;align-items:center;border:1px solid #4a2410;background:var(--accent-soft);color:#ffb08a;border-radius:7px;padding:3px 9px;cursor:pointer;margin:4px 0;font-size:12px}
+.art-chip:hover{border-color:var(--accent)}
+.composer{border-top:1px solid var(--border);padding:10px;display:flex;gap:8px;align-items:flex-end}
+.composer textarea{flex:1;min-height:44px;max-height:180px}
+.hints{padding:0 10px 8px;display:flex;gap:6px;flex-wrap:wrap}
+.hints .btn{font-size:11px;padding:3px 8px;color:var(--muted)}
+
+/* markdown */
+.md p{margin:.35em 0} .md h1,.md h2,.md h3,.md h4{font-family:var(--display);letter-spacing:.05em;font-weight:400;margin:.6em 0 .25em;color:#fff}
+.md h1{font-size:24px}.md h2{font-size:20px}.md h3{font-size:17px}
+.md code{background:#1a1a1a;border:1px solid #262626;padding:0 4px;border-radius:4px;font-size:12px}
+.md pre{background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:9px;overflow:auto}
+.md pre code{background:none;border:none;padding:0}
+.md a{color:var(--accent)} .md blockquote{border-left:3px solid var(--accent);margin:.4em 0;padding-left:10px;color:var(--muted)}
+.md ul,.md ol{margin:.3em 0;padding-left:22px} .md hr{border:none;border-top:1px solid var(--border)}
+.md table{border-collapse:collapse;margin:.4em 0}.md th,.md td{border:1px solid var(--border2);padding:3px 8px}
+
+/* ---------- Tasks ---------- */
+#tasksPanel .inner{padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1}
+.card{border:1px solid var(--border);border-radius:10px;padding:10px;background:#0e0e0e}
+.card h3{font-family:var(--display);font-size:18px;letter-spacing:.07em;font-weight:400;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.task{border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:#0b0b0b;display:grid;grid-template-columns:1fr auto;gap:4px 8px}
+.task .t{font-weight:600}
+.task .meta{font-size:11px;color:var(--muted);grid-column:1/-1}
+.task .actions{display:flex;gap:4px;align-items:start}
+.s-pending{color:var(--muted);border-color:#333}.s-running{color:var(--info);border-color:#1f4a6e}
+.s-blocked{color:var(--warn);border-color:#5a4210}.s-done{color:var(--ok);border-color:#1d5a37}
+.s-failed{color:var(--err);border-color:#5a1d1d}.s-rejected{color:#ff7aa8;border-color:#5a1d3a}
+.snap{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:5px 0;border-bottom:1px dashed var(--border);font-size:12px}
+.snap:last-child{border-bottom:none}
+
+/* ---------- Right pane ---------- */
+.art-bar{display:flex;gap:6px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.art-tabs{display:flex;gap:4px;overflow:auto;flex:1;min-width:0}
+.art-tab{background:#121212;border:1px solid var(--border2);border-radius:6px;padding:3px 9px;cursor:pointer;font-size:11.5px;white-space:nowrap;color:var(--muted)}
+.art-tab[aria-selected="true"]{border-color:var(--accent);color:#fff}
+.art-tab .live{color:var(--accent)}
+.stage{flex:1;min-height:0;position:relative;background:#050505}
+.stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+.stage pre.src{position:absolute;inset:0;margin:0;padding:12px;overflow:auto;white-space:pre-wrap;color:#ddd}
+.empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--dim);text-align:center;padding:20px}
+.empty .big{font-family:var(--display);font-size:42px;color:#2a2a2a;letter-spacing:.08em}
+.files{display:grid;grid-template-columns:minmax(160px,34%) 1fr;flex:1;min-height:0}
+.tree{border-right:1px solid var(--border);padding:8px;overflow:auto;font-size:12px}
+.tree ul{list-style:none;margin:0;padding-left:12px}
+.tree>ul{padding-left:0}
+.tree .node{display:flex;gap:6px;align-items:center;padding:2px 5px;border-radius:5px;cursor:pointer;border:1px solid transparent;width:100%;background:none;text-align:left}
+.tree .node:hover{background:#151515}
+.tree .node.sel{border-color:var(--accent);background:var(--accent-soft)}
+.tree .dir{color:#ffb08a}
+.viewer{display:flex;flex-direction:column;min-height:0}
+.viewer .vbar{display:flex;gap:6px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.viewer textarea{flex:1;border:0;border-radius:0;background:#070707;resize:none;padding:10px;white-space:pre;tab-size:2}
+.viewer .vstage{flex:1;position:relative;min-height:0}
+
+/* ---------- Terminal ---------- */
+#terminal{display:flex;flex-direction:column;overflow:hidden;transition:height .25s}
+#terminal.collapsed .term-body{display:none}
+.term-head{display:flex;align-items:center;gap:8px;padding:5px 10px;cursor:pointer;user-select:none}
+.term-head h2{font-size:17px}
+.term-body{height:var(--term-h);display:grid;grid-template-columns:220px 1fr;border-top:1px solid var(--border)}
+.term-tree{border-right:1px solid var(--border);overflow:auto;padding:6px;font-size:11.5px}
+.term-main{display:flex;flex-direction:column;min-height:0}
+#termLog{flex:1;padding:6px 10px;font-size:12px;overflow:auto}
+.tl{white-space:pre-wrap;word-break:break-word}
+.tl .ts{color:var(--dim);margin-right:6px}
+.tl.cmd{color:#fff}.tl.cmd::before{content:'$ ';color:var(--accent)}
+.tl.err{color:var(--err)}.tl.tool{color:#ffb08a}.tl.sys{color:var(--info)}.tl.ok{color:var(--ok)}.tl.out{color:#bdbdbd}.tl.warn{color:var(--warn)}
+.term-input{display:flex;align-items:center;border-top:1px solid var(--border);padding:4px 10px;gap:6px}
+.term-input span{color:var(--accent)}
+.term-input input{flex:1;background:transparent;border:0;outline:none}
+
+/* ---------- Drawer / Modal / Toast ---------- */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);z-index:40}
+.scrim[hidden]{display:none}
+#memDrawer{position:fixed;top:8px;right:8px;bottom:8px;width:min(420px,calc(100vw - 16px));z-index:50;display:flex;flex-direction:column;transform:translateX(110%);transition:transform .28s ease;background:rgba(14,14,14,.92)}
+#memDrawer.open{transform:none}
+#memDrawer .dh{display:flex;align-items:center;gap:8px;padding:12px;border-bottom:1px solid var(--border)}
+#memDrawer .db{padding:12px;display:flex;flex-direction:column;gap:10px;overflow:auto;flex:1}
+.fact{border:1px solid var(--border);border-radius:8px;padding:8px;background:#0b0b0b;display:flex;flex-direction:column;gap:6px}
+.fact .ft{white-space:pre-wrap}
+.fact .fm{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--dim)}
+.modal{position:fixed;z-index:60;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,calc(100vw - 20px));max-height:calc(100vh - 30px);display:flex;flex-direction:column;background:rgba(16,16,16,.95)}
+.modal[hidden]{display:none}
+.modal .mh{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.modal .mh h2{font-size:24px}
+.modal .mb{padding:14px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.modal .mf{display:flex;gap:8px;justify-content:flex-end;padding:10px 14px;border-top:1px solid var(--border)}
+.persona-layout{display:grid;grid-template-columns:200px 1fr;gap:12px}
+.plist{display:flex;flex-direction:column;gap:4px}
+.plist button{text-align:left}
+.plist button[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.risk{border:1px solid #5a2a10;background:rgba(255,79,0,.08);border-radius:8px;padding:8px 10px;color:#ffc2a3}
+#hitlPayload{min-height:200px;font-size:12px;white-space:pre}
+#hitlPayload[readonly]{opacity:.85}
+#toasts{position:fixed;top:74px;right:14px;display:flex;flex-direction:column;gap:6px;z-index:80;align-items:flex-end;pointer-events:none}
+.toast{pointer-events:auto;padding:8px 14px;border-radius:8px;border:1px solid var(--border2);background:rgba(20,20,20,.95);box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:min(560px,92vw);animation:tin .2s ease}
+.toast.error{border-color:var(--err);color:#ffc9c9}.toast.success{border-color:var(--ok)}.toast.warn{border-color:var(--warn)}
+@keyframes tin{from{opacity:0;transform:translateX(12px)}}
+kbd{border:1px solid var(--border2);border-bottom-width:2px;border-radius:4px;padding:0 4px;font-size:10.5px;color:var(--muted)}
+
+.prow .grid2 textarea{min-height:38px}
+.tl.dim{color:var(--dim)}
+#routerStrip .badge{font-size:9.5px;padding:0 5px}
+@media (max-width:980px){
+  body{overflow:auto}
+  #app{height:auto;min-height:100vh}
+  main.panes{grid-template-columns:1fr}
+  .pane{min-height:70vh}
+  .term-body{grid-template-columns:1fr}
+  .term-tree{display:none}
+  .persona-layout{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<a href="#chatInput" class="sr-only">Skip to chat input</a>
+<div id="app">
+  <header class="top glass" role="banner">
+    <div class="brand"><h1>AGENT<span>/</span>STUDIO</h1><span class="ver">v1.0</span></div>
+
+    <div class="hgroup" title="Persona (Grok Bots)">
+      <label class="lbl" for="personaSelect">Persona</label>
+      <select id="personaSelect" class="input" aria-label="Select persona"></select>
+      <button class="btn icon" id="personaEditBtn" aria-label="Configure personas" title="Configure personas">⚙</button>
+    </div>
+
+    <div class="hgroup" aria-label="Provider router">
+      <span class="lbl">Router</span>
+      <button class="btn" id="routerBtn" aria-haspopup="dialog" aria-controls="providerModal" title="Provider router: keys, priority, cooldowns">
+        <span class="status-dot mock" id="statusDot" aria-hidden="true"></span>
+        <span id="activeProvider">mock</span>
+      </button>
+      <div id="routerStrip" class="row" style="gap:4px" aria-label="Provider status (priority order)"></div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="hgroup">
+      <label class="lbl" for="maxStepsInput">Steps</label>
+      <input id="maxStepsInput" class="input" type="number" min="1" max="20" style="width:56px" aria-label="Max ReAct steps">
+      <label class="row" style="gap:4px;font-size:11px" title="Skip Human-in-the-Loop approvals"><input type="checkbox" id="autoApprove"> auto-approve</label>
+    </div>
+    <div class="hgroup">
+      <button class="btn" id="memBtn" aria-controls="memDrawer" aria-expanded="false" title="Memory (Ctrl+M)">◉ Memory <span class="badge" id="memCount">0</span></button>
+      <button class="btn" id="exportBtn" title="Export state as JSON">Export</button>
+      <button class="btn" id="importBtn" title="Import state from JSON">Import</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <main class="panes" role="main">
+    <!-- LEFT PANE -->
+    <section class="pane glass" aria-label="Conversation and tasks">
+      <div class="tabs" role="tablist" aria-label="Left pane" data-tablist="left">
+        <button class="tab" role="tab" id="tab-chat" aria-controls="chatPanel" aria-selected="true">Chat / Execution</button>
+        <button class="tab" role="tab" id="tab-tasks" aria-controls="tasksPanel" aria-selected="false" tabindex="-1">Scheduled Goals &amp; Background Tasks</button>
+        <div class="tools"><button class="btn sm" id="clearChatBtn" title="Clear conversation">Clear</button></div>
+      </div>
+
+      <div class="tabpanel" id="chatPanel" role="tabpanel" aria-labelledby="tab-chat">
+        <div id="chatLog" class="scroll" role="log" aria-live="polite" aria-relevant="additions"></div>
+        <div class="hints" aria-label="Example prompts">
+          <button class="btn" data-prompt="Build a landing page for a coffee roastery called Ember &amp; Oak">Build landing page</button>
+          <button class="btn" data-prompt="Write a debounce function in JavaScript and save it">Write code</button>
+          <button class="btn" data-prompt="Explore the files in the workspace and summarize the README">Explore files</button>
+          <button class="btn" data-prompt="Delete the temp directory to clean up">Delete (HITL)</button>
+          <button class="btn" data-prompt="Deploy the project via the external API">External API (HITL)</button>
+          <button class="btn" data-prompt="I prefer TypeScript and dark themes. My name is Iggy. Remember that I work on agent tooling.">Teach memory</button>
+          <button class="btn" data-prompt="Run a flaky request to test retry and backoff">Retry/backoff</button>
+        </div>
+        <form class="composer" id="composer">
+          <label for="chatInput" class="sr-only">Message</label>
+          <textarea id="chatInput" class="input" placeholder="Ask the agent… (Enter to send, Shift+Enter newline, Ctrl+K focus)" rows="2"></textarea>
+          <button class="btn primary" type="submit" id="sendBtn">Send</button>
+          <button class="btn danger" type="button" id="stopBtn" disabled>Stop</button>
+        </form>
+      </div>
+
+      <div class="tabpanel" id="tasksPanel" role="tabpanel" aria-labelledby="tab-tasks" hidden>
+        <div class="inner scroll">
+          <div class="card">
+            <h3>Goal Decomposition</h3>
+            <div class="row">
+              <label class="sr-only" for="goalInput">Goal</label>
+              <input id="goalInput" class="input" style="flex:1" placeholder="e.g. Launch a marketing site for Ember &amp; Oak">
+              <button class="btn primary" id="decomposeBtn">Decompose</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Add Task</h3>
+            <form id="taskForm" class="grid2">
+              <label class="field">Task<input id="tfTask" class="input" required placeholder="Write /docs/plan.md"></label>
+              <label class="field">Acceptance criteria<input id="tfCriteria" class="input" placeholder="File /docs/plan.md exists"></label>
+              <label class="field" style="grid-column:1/-1">Dependencies (Ctrl/Cmd-click to multi-select)<select id="tfDeps" class="input" multiple size="3"></select></label>
+              <div class="row" style="grid-column:1/-1;justify-content:flex-end"><button class="btn primary" type="submit">Add task</button></div>
+            </form>
+          </div>
+          <div class="card">
+            <h3>Queue <span class="badge" id="schedState">idle</span>
+              <span class="spacer"></span>
+              <button class="btn sm primary" id="schedStartBtn">▶ Run scheduler</button>
+              <button class="btn sm" id="schedPauseBtn" disabled>❚❚ Pause</button>
+              <button class="btn sm danger" id="clearTasksBtn">Clear</button>
+            </h3>
+            <div id="taskList" style="display:flex;flex-direction:column;gap:6px"></div>
+          </div>
+          <div class="card">
+            <h3>Snapshots <span class="badge" id="snapCount">0</span><span class="spacer"></span><button class="btn sm" id="undoBtn">↶ Undo last</button></h3>
+            <div id="snapList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANE -->
+    <section class="pane glass" aria-label="Workspace">
+      <div class="tabs" role="tablist" aria-label="Workspace" data-tablist="right">
+        <button class="tab" role="tab" id="tab-arts" aria-controls="artsPanel" aria-selected="true">Artifacts</button>
+        <button class="tab" role="tab" id="tab-files" aria-controls="filesPanel" aria-selected="false" tabindex="-1">Files (VFS)</button>
+      </div>
+      <div class="tabpanel" id="artsPanel" role="tabpanel" aria-labelledby="tab-arts">
+        <div class="art-bar">
+          <div class="art-tabs" id="artTabs" role="tablist" aria-label="Artifacts"></div>
+          <label class="sr-only" for="artVersion">Version</label>
+          <select id="artVersion" class="input" aria-label="Artifact version" style="padding:3px 6px"></select>
+          <button class="btn sm" id="artViewBtn" aria-pressed="false" title="Toggle preview / source">Source</button>
+          <button class="btn sm" id="artSaveBtn" title="Save artifact to VFS">Save to VFS</button>
+          <button class="btn sm danger" id="artDelBtn" title="Remove artifact">✕</button>
+        </div>
+        <div class="stage" id="artStage">
+          <div class="empty" id="artEmpty"><div><div class="big">WORKSPACE</div>Artifacts streamed by the agent render here live,<br>in a sandboxed iframe.</div></div>
+          <iframe id="artFrame" title="Artifact preview" sandbox="allow-scripts allow-modals" referrerpolicy="no-referrer" hidden></iframe>
+          <pre class="src" id="artSource" hidden></pre>
+        </div>
+      </div>
+      <div class="tabpanel" id="filesPanel" role="tabpanel" aria-labelledby="tab-files" hidden>
+        <div class="files">
+          <nav class="tree scroll" id="fileTree" aria-label="Virtual file tree"></nav>
+          <div class="viewer">
+            <div class="vbar">
+              <strong id="viewerPath" class="muted">No file selected</strong>
+              <span class="spacer" style="flex:1"></span>
+              <button class="btn sm" id="viewerPreviewBtn" disabled aria-pressed="false">Preview</button>
+              <button class="btn sm" id="viewerSaveBtn" disabled>Save</button>
+              <button class="btn sm danger" id="viewerDelBtn" disabled>Delete</button>
+              <button class="btn sm" id="newFileBtn">+ File</button>
+            </div>
+            <div class="vstage">
+              <label class="sr-only" for="viewerText">File content</label>
+              <textarea id="viewerText" class="input" spellcheck="false" style="position:absolute;inset:0;width:100%;height:100%" disabled></textarea>
+              <iframe id="viewerFrame" title="File preview" sandbox="allow-scripts" hidden style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff"></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- TERMINAL DRAWER -->
+  <section id="terminal" class="glass collapsed" aria-label="Terminal">
+    <div class="term-head" id="termHead" role="button" tabindex="0" aria-expanded="false" aria-controls="termBody">
+      <h2>Terminal</h2><span class="muted" style="font-size:11px">logs · VFS tree · command traces</span>
+      <span class="badge" id="termCount">0</span>
+      <span class="spacer" style="flex:1"></span>
+      <kbd>Ctrl</kbd>+<kbd>`</kbd>
+      <button class="btn sm" id="termClearBtn" type="button">Clear</button>
+      <span id="termChevron">▲</span>
+    </div>
+    <div class="term-body" id="termBody">
+      <div class="term-tree scroll" id="termTree" aria-label="VFS tree (terminal)"></div>
+      <div class="term-main">
+        <div id="termLog" class="scroll" role="log" aria-live="off"></div>
+        <form class="term-input" id="termForm"><span id="termCwd">/ $</span><label for="termInput" class="sr-only">Command</label><input id="termInput" autocomplete="off" spellcheck="false" placeholder="ls, cat, echo, mkdir, rm, tree, pwd, mv, cd, touch, help"></form>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- MEMORY DRAWER -->
+<div class="scrim" id="scrim" hidden></div>
+<aside id="memDrawer" class="glass" role="dialog" aria-modal="true" aria-labelledby="memTitle" aria-hidden="true" inert>
+  <div class="dh"><h2 id="memTitle" style="font-size:24px">Memory · Dots</h2><span class="spacer" style="flex:1"></span><button class="btn icon" id="memClose" aria-label="Close memory">✕</button></div>
+  <div class="db">
+    <label class="sr-only" for="memSearch">Search memory</label>
+    <input id="memSearch" class="input" placeholder="Search facts (TF-IDF ranked)…">
+    <form id="memForm" class="row">
+      <label class="sr-only" for="memNew">New fact</label>
+      <input id="memNew" class="input" style="flex:1" placeholder="Add a fact, e.g. User prefers tabs">
+      <button class="btn primary" type="submit">Add</button>
+    </form>
+    <div class="row muted" style="font-size:11px;justify-content:space-between"><span id="memInfo"></span><button class="btn sm danger" id="memClearAll">Clear all</button></div>
+    <div id="memList" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+</aside>
+
+<!-- PERSONA MODAL -->
+<div class="modal glass" id="personaModal" role="dialog" aria-modal="true" aria-labelledby="personaTitle" hidden>
+  <div class="mh"><h2 id="personaTitle">Grok Bots · Personas</h2><span class="spacer" style="flex:1"></span><button class="btn icon" data-close aria-label="Close">✕</button></div>
+  <div class="mb">
+    <div class="persona-layout">
+      <div><div class="plist" id="personaList"></div><button class="btn" id="personaNew" style="margin-top:8px;width:100%">+ New persona</button></div>
+      <form id="personaForm" style="display:flex;flex-direction:column;gap:10px">
+        <label class="field">Name<input id="pfName" class="input" required maxlength="60"></label>
+        <label class="field">System prompt<textarea id="pfPrompt" class="input" rows="6"></textarea></label>
+        <label class="field">Knowledge snippets (separate chunks with a blank line or ---)<textarea id="pfKnow" class="input" rows="7"></textarea></label>
+        <div class="row" style="justify-content:space-between">
+          <button class="btn danger" type="button" id="personaDelete">Delete</button>
+          <div class="row"><button class="btn" type="button" id="personaUse">Use this persona</button><button class="btn primary" type="submit">Save</button></div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- HITL MODAL -->
+<div class="modal glass" id="hitlModal" role="alertdialog" aria-modal="true" aria-labelledby="hitlTitle" aria-describedby="hitlReason" hidden>
+  <div class="mh"><h2 id="hitlTitle">Human-in-the-Loop · Approval Required</h2><span class="spacer" style="flex:1"></span><span class="badge" id="hitlQueue"></span></div>
+  <div class="mb">
+    <div class="risk" id="hitlReason"></div>
+    <div class="row muted" style="font-size:12px"><span>Operation:</span><strong id="hitlOp" style="color:#fff"></strong><span id="hitlSource"></span></div>
+    <label class="field">Payload (JSON) <span id="hitlEditHint" class="dim" style="text-transform:none"></span><textarea id="hitlPayload" class="input" readonly spellcheck="false"></textarea></label>
+  </div>
+  <div class="mf">
+    <button class="btn danger" id="hitlReject">Reject</button>
+    <button class="btn" id="hitlEdit" aria-pressed="false">Edit</button>
+    <button class="btn primary" id="hitlApprove">Approve</button>
+  </div>
+</div>
+
+<!-- PROMPT MODAL (generic input) -->
+<div class="modal glass" id="promptModal" role="dialog" aria-modal="true" aria-labelledby="promptTitle" hidden style="width:min(480px,calc(100vw - 20px))">
+  <div class="mh"><h2 id="promptTitle">Input</h2></div>
+  <form class="mb" id="promptForm"><label class="field" id="promptLabel">Value<input id="promptInput" class="input"></label></form>
+  <div class="mf"><button class="btn" id="promptCancel">Cancel</button><button class="btn primary" id="promptOk">OK</button></div>
+</div>
+
+<!-- PROVIDER ROUTER MODAL -->
+<div class="modal glass" id="providerModal" role="dialog" aria-modal="true" aria-labelledby="providerTitle" hidden style="width:min(920px,calc(100vw - 20px))">
+  <div class="mh"><h2 id="providerTitle">Provider Router</h2><span class="muted" style="font-size:11px">keys stay in this browser's localStorage only · never exported</span><span class="spacer" style="flex:1"></span><button class="btn icon" data-close aria-label="Close">✕</button></div>
+  <div class="mb">
+    <div class="row muted" style="font-size:12px">Requests try providers top→bottom. On 429 / 5xx / network errors the router rotates keys (round-robin) and falls through; cooldowns honour <code>Retry-After</code> and <code>x-ratelimit-*</code> headers. The offline mock is always the final fallback.</div>
+    <div id="providerRows" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="card row" style="justify-content:space-between">
+      <div><strong>Offline mock engine</strong> <span class="badge">final fallback</span></div>
+      <label class="row" style="gap:4px;font-size:12px"><input type="checkbox" id="forceMock"> force mock (ignore keys)</label>
+      <label class="row" style="gap:4px;font-size:12px">chunk delay <input id="mockDelay" type="number" min="0" max="200" class="input" style="width:64px"> ms</label>
+      <button class="btn sm" id="resetCooldowns">Reset all cooldowns</button>
+    </div>
+  </div>
+  <div class="mf"><button class="btn primary" data-close>Done</button></div>
+</div>
+
+<div id="toasts" aria-live="assertive" role="status"></div>
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+ * SECTION 0 — UTILITIES
+ * ===================================================================== */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const sleep = (ms, signal) => new Promise((resolve, reject) => {
+  if (signal && signal.aborted) return reject(abortError());
+  const t = setTimeout(resolve, ms);
+  if (signal) signal.addEventListener('abort', () => { clearTimeout(t); reject(abortError()); }, { once: true });
+});
+const abortError = () => { const e = new Error('Aborted'); e.name = 'AbortError'; return e; };
+const uid = (p = 'id') => p + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const escapeHtml = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ESC[c]);
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+const fmtTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const deepClone = (o) => JSON.parse(JSON.stringify(o));
+const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'item';
+function hashStr(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function prng(seed) { let a = seed >>> 0 || 1; return () => { a ^= a << 13; a >>>= 0; a ^= a >>> 17; a ^= a << 5; a >>>= 0; return a / 4294967296; }; }
+function rafThrottle(fn) { let queued = false, lastArgs; return (...args) => { lastArgs = args; if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; fn(...lastArgs); }); }; }
+function throttle(fn, ms) { let last = 0, timer = null, lastArgs; return (...args) => { lastArgs = args; const now = Date.now(); const run = () => { last = Date.now(); timer = null; fn(...lastArgs); }; if (now - last >= ms) run(); else if (!timer) timer = setTimeout(run, ms - (now - last)); }; }
+
+const Store = {
+  prefix: 'agentStudio.',
+  get(key, fallback) { try { const v = localStorage.getItem(this.prefix + key); return v == null ? fallback : JSON.parse(v); } catch { return fallback; } },
+  set(key, value) {
+    try { localStorage.setItem(this.prefix + key, JSON.stringify(value)); return true; }
+    catch (e) { console.warn('localStorage write failed', key, e); if (typeof toast === 'function') toast('Storage quota exceeded while saving ' + key, 'error'); return false; }
+  },
+  remove(key) { try { localStorage.removeItem(this.prefix + key); } catch {} },
+};
+
+/* Tiny event emitter used as the native reactive layer (Petite-Vue optional). */
+class Emitter {
+  constructor() { this._h = new Map(); }
+  on(ev, fn) { if (!this._h.has(ev)) this._h.set(ev, new Set()); this._h.get(ev).add(fn); return () => this._h.get(ev).delete(fn); }
+  emit(ev, data) { (this._h.get(ev) || []).forEach((fn) => { try { fn(data); } catch (e) { console.error(e); } }); }
+}
+
+/* GSAP guard: animate only if the CDN loaded. */
+const Anim = {
+  get ok() { return typeof window.gsap !== 'undefined' && !window.__gsapFailed && !matchMedia('(prefers-reduced-motion: reduce)').matches; },
+  in(el, opts = {}) { if (!el) return; if (this.ok) { try { window.gsap.from(el, Object.assign({ opacity: 0, y: 8, duration: 0.28, ease: 'power2.out', clearProps: 'all' }, opts)); } catch {} } },
+  pulse(el) { if (el && this.ok) { try { window.gsap.fromTo(el, { boxShadow: '0 0 0 0 rgba(255,79,0,.6)' }, { boxShadow: '0 0 0 8px rgba(255,79,0,0)', duration: 0.6 }); } catch {} } },
+};
+
+/* =====================================================================
+ * SECTION 1 — TEXT RELEVANCE (TF-IDF) shared by Memory + Knowledge
+ * ===================================================================== */
+const STOP = new Set('a an and are as at be but by for from has have i if in into is it its me my of on or our so that the their them then there these they this to was we were what when where which who will with you your can do does did not no yes please just also about would could should how why all any some more most other such only own same than too very s t don now let lets i\'m im ok'.split(/\s+/));
+function stem(w) { if (w.length > 5 && w.endsWith('ing')) return w.slice(0, -3); if (w.length > 4 && w.endsWith('ed')) return w.slice(0, -2); if (w.length > 4 && w.endsWith('es')) return w.slice(0, -2); if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) return w.slice(0, -1); return w; }
+function tokenize(text) { return (String(text).toLowerCase().match(/[a-z0-9][a-z0-9+#._-]*/g) || []).map((w) => w.replace(/[._-]+$/, '')).filter((w) => w.length > 1 && !STOP.has(w)).map(stem); }
+function tfidfRank(query, docs, { k = 5, threshold = 0.08 } = {}) {
+  const qTokens = tokenize(query);
+  if (!qTokens.length || !docs.length) return [];
+  const docTokens = docs.map((d) => tokenize(d.text));
+  const N = docs.length;
+  const df = new Map();
+  docTokens.forEach((toks) => new Set(toks).forEach((t) => df.set(t, (df.get(t) || 0) + 1)));
+  const idf = (t) => Math.log((N + 1) / ((df.get(t) || 0) + 1)) + 1;
+  const vec = (toks) => { const tf = new Map(); toks.forEach((t) => tf.set(t, (tf.get(t) || 0) + 1)); const v = new Map(); tf.forEach((c, t) => v.set(t, (c / toks.length) * idf(t))); return v; };
+  const qv = vec(qTokens);
+  const norm = (v) => Math.sqrt([...v.values()].reduce((s, x) => s + x * x, 0)) || 1;
+  const qn = norm(qv);
+  return docs.map((d, i) => {
+    const dv = vec(docTokens[i]);
+    let dot = 0; qv.forEach((w, t) => { if (dv.has(t)) dot += w * dv.get(t); });
+    return { doc: d, score: dot / (qn * norm(dv)) };
+  }).filter((r) => r.score >= threshold).sort((a, b) => b.score - a.score).slice(0, k);
+}
+
+/* =====================================================================
+ * SECTION 2 — VIRTUAL FILE SYSTEM
+ * ===================================================================== */
+class VFS extends Emitter {
+  constructor(data) { super(); this.nodes = new Map(); this.cwd = '/'; if (data) this.load(data); else this.reset(); }
+  reset() {
+    this.nodes = new Map([['/', { type: 'dir', mtime: Date.now() }]]);
+    this.cwd = '/';
+    this.mkdir('/project'); this.mkdir('/src'); this.mkdir('/tmp'); this.mkdir('/docs');
+    this.write('/README.md', '# Agent Studio Workspace\n\nThis is an in-memory virtual file system.\n\n- `/project` — generated web projects\n- `/src` — source code written by the agent\n- `/docs` — notes and plans\n- `/tmp` — scratch space (safe to delete)\n\nTry: `tree`, `cat /README.md`, `echo hi > /tmp/a.txt`.\n', { silent: true });
+    this.write('/tmp/scratch.log', 'boot ok\n', { silent: true });
+    this.write('/docs/notes.md', '## Notes\n\n- The agent can read_file, write_file and execute_command.\n', { silent: true });
+    this.emit('change');
+  }
+  norm(p, base = this.cwd) {
+    if (p == null || p === '') p = '.';
+    p = String(p).trim();
+    const parts = (p.startsWith('/') ? p : base.replace(/\/$/, '') + '/' + p).split('/');
+    const out = [];
+    for (const part of parts) { if (!part || part === '.') continue; if (part === '..') out.pop(); else out.push(part); }
+    return '/' + out.join('/');
+  }
+  parent(p) { const n = this.norm(p); if (n === '/') return '/'; return n.slice(0, n.lastIndexOf('/')) || '/'; }
+  base(p) { const n = this.norm(p); return n === '/' ? '/' : n.slice(n.lastIndexOf('/') + 1); }
+  exists(p) { return this.nodes.has(this.norm(p)); }
+  isDir(p) { const n = this.nodes.get(this.norm(p)); return !!n && n.type === 'dir'; }
+  isFile(p) { const n = this.nodes.get(this.norm(p)); return !!n && n.type === 'file'; }
+  read(p) {
+    const n = this.norm(p), node = this.nodes.get(n);
+    if (!node) throw new Error(`No such file: ${n}`);
+    if (node.type === 'dir') throw new Error(`Is a directory: ${n}`);
+    return node.content;
+  }
+  mkdir(p, { silent } = {}) {
+    const n = this.norm(p);
+    if (this.isFile(n)) throw new Error(`File exists: ${n}`);
+    const segs = n.split('/').filter(Boolean); let cur = '';
+    for (const s of segs) {
+      cur += '/' + s;
+      const node = this.nodes.get(cur);
+      if (node && node.type === 'file') throw new Error(`Not a directory: ${cur}`);
+      if (!node) this.nodes.set(cur, { type: 'dir', mtime: Date.now() });
+    }
+    if (!silent) this.emit('change');
+    return n;
+  }
+  write(p, content, { append = false, silent = false } = {}) {
+    const n = this.norm(p);
+    if (n === '/') throw new Error('Cannot write to /');
+    if (this.isDir(n)) throw new Error(`Is a directory: ${n}`);
+    this.mkdir(this.parent(n), { silent: true });
+    const prev = this.nodes.get(n);
+    const text = String(content == null ? '' : content);
+    this.nodes.set(n, { type: 'file', content: append && prev ? prev.content + text : text, mtime: Date.now() });
+    if (!silent) this.emit('change', { path: n });
+    return n;
+  }
+  list(p = '.') {
+    const n = this.norm(p);
+    if (!this.exists(n)) throw new Error(`No such directory: ${n}`);
+    if (!this.isDir(n)) return [{ name: this.base(n), path: n, type: 'file' }];
+    const prefix = n === '/' ? '/' : n + '/';
+    const out = [];
+    for (const [path, node] of this.nodes) {
+      if (path === n || !path.startsWith(prefix)) continue;
+      const rest = path.slice(prefix.length);
+      if (!rest.includes('/')) out.push({ name: rest, path, type: node.type, size: node.type === 'file' ? node.content.length : 0 });
+    }
+    return out.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
+  }
+  delete(p, { recursive = false } = {}) {
+    const n = this.norm(p);
+    if (n === '/') throw new Error('Refusing to delete /');
+    if (!this.exists(n)) throw new Error(`No such file or directory: ${n}`);
+    if (this.isDir(n)) {
+      const kids = this.list(n);
+      if (kids.length && !recursive) throw new Error(`Directory not empty: ${n} (use rm -r)`);
+      for (const path of [...this.nodes.keys()]) if (path === n || path.startsWith(n + '/')) this.nodes.delete(path);
+      if (this.cwd === n || this.cwd.startsWith(n + '/')) this.cwd = '/';
+    } else this.nodes.delete(n);
+    this.emit('change');
+    return n;
+  }
+  move(src, dst) {
+    const s = this.norm(src); let d = this.norm(dst);
+    if (!this.exists(s)) throw new Error(`No such file or directory: ${s}`);
+    if (s === '/') throw new Error('Cannot move /');
+    if (this.isDir(d)) d = this.norm(this.base(s), d);
+    if (d === s) return d;
+    if (d.startsWith(s + '/')) throw new Error('Cannot move a directory into itself');
+    const moves = [...this.nodes.entries()].filter(([path]) => path === s || path.startsWith(s + '/'));
+    this.mkdir(this.parent(d), { silent: true });
+    moves.forEach(([path]) => this.nodes.delete(path));
+    moves.forEach(([path, node]) => this.nodes.set(d + path.slice(s.length), node));
+    this.emit('change');
+    return d;
+  }
+  tree(p = '/', prefix = '') {
+    const n = this.norm(p);
+    if (!this.exists(n)) throw new Error(`No such directory: ${n}`);
+    const lines = prefix ? [] : [n];
+    const kids = this.isDir(n) ? this.list(n) : [];
+    kids.forEach((k, i) => {
+      const last = i === kids.length - 1;
+      lines.push(prefix + (last ? '└── ' : '├── ') + k.name + (k.type === 'dir' ? '/' : ''));
+      if (k.type === 'dir') lines.push(...this.tree(k.path, prefix + (last ? '    ' : '│   ')));
+    });
+    return prefix ? lines : lines.join('\n');
+  }
+  toJSON() { return { cwd: this.cwd, nodes: [...this.nodes.entries()] }; }
+  load(data) {
+    if (!data || !Array.isArray(data.nodes)) throw new Error('Invalid VFS data');
+    const m = new Map();
+    for (const [p, node] of data.nodes) {
+      if (typeof p !== 'string' || !node || (node.type !== 'dir' && node.type !== 'file')) continue;
+      m.set(p, node.type === 'dir' ? { type: 'dir', mtime: node.mtime || Date.now() } : { type: 'file', content: String(node.content ?? ''), mtime: node.mtime || Date.now() });
+    }
+    if (!m.has('/')) m.set('/', { type: 'dir', mtime: Date.now() });
+    this.nodes = m; this.cwd = typeof data.cwd === 'string' && m.has(data.cwd) ? data.cwd : '/';
+    this.emit('change');
+  }
+  /* Tokenizer for shell-ish commands supporting quotes and escapes. */
+  static splitArgs(line) {
+    const out = []; let cur = '', q = null, has = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) { if (c === q) q = null; else if (c === '\\' && q === '"' && i + 1 < line.length) cur += VFS.unescape(line[++i]); else cur += c; }
+      else if (c === '"' || c === "'") { q = c; has = true; }
+      else if (c === '\\' && i + 1 < line.length) { cur += line[++i]; has = true; }
+      else if (/\s/.test(c)) { if (cur || has) { out.push(cur); cur = ''; has = false; } }
+      else if (c === '>') { if (cur || has) { out.push(cur); cur = ''; has = false; } if (line[i + 1] === '>') { out.push('>>'); i++; } else out.push('>'); }
+      else cur += c;
+    }
+    if (q) throw new Error('Unterminated quote');
+    if (cur || has) out.push(cur);
+    return out;
+  }
+  static unescape(c) { return ({ n: '\n', t: '\t', '"': '"', '\\': '\\' })[c] ?? '\\' + c; }
+  /** Analyse a command for risk without running it (used by HITL). */
+  assessCommand(line) {
+    let args; try { args = VFS.splitArgs(line); } catch { return null; }
+    const [cmd, ...rest] = args;
+    if (cmd === 'rm') { const targets = rest.filter((a) => !a.startsWith('-')); return `Deletes ${targets.map((t) => this.norm(t)).join(', ') || '(nothing)'}`; }
+    if (cmd === 'mv') { const [s, d] = rest; if (d && this.exists(d) && !this.isDir(d)) return `Moves ${this.norm(s)} over existing file ${this.norm(d)}`; return `Moves ${this.norm(s || '')} → ${this.norm(d || '')}`; }
+    const gt = rest.indexOf('>');
+    if (cmd === 'echo' && gt >= 0 && rest[gt + 1] && this.isFile(rest[gt + 1])) return `Overwrites existing file ${this.norm(rest[gt + 1])}`;
+    return null;
+  }
+  exec(line) {
+    line = String(line || '').trim();
+    if (!line) return '';
+    const args = VFS.splitArgs(line);
+    const cmd = args.shift();
+    const flags = new Set(args.filter((a) => /^-[a-z]+$/i.test(a)).flatMap((a) => a.slice(1).split('')));
+    const pos = args.filter((a) => !/^-[a-z]+$/i.test(a));
+    switch (cmd) {
+      case 'help': return 'Commands: ls [-l] [path], cat <file...>, echo <text> [> file | >> file], mkdir [-p] <dir...>, rm [-r] <path...>, tree [path], pwd, cd <dir>, mv <src> <dst>, touch <file...>, clear, help';
+      case 'pwd': return this.cwd;
+      case 'cd': { const t = this.norm(pos[0] || '/'); if (!this.isDir(t)) throw new Error(`cd: not a directory: ${t}`); this.cwd = t; this.emit('cwd'); return ''; }
+      case 'ls': {
+        const t = pos[0] || '.';
+        const items = this.list(t);
+        if (flags.has('l')) return items.map((i) => `${i.type === 'dir' ? 'd' : '-'}rw-r--r--  ${String(i.size || 0).padStart(6)}  ${i.name}${i.type === 'dir' ? '/' : ''}`).join('\n') || '(empty)';
+        return items.map((i) => i.name + (i.type === 'dir' ? '/' : '')).join('  ') || '(empty)';
+      }
+      case 'cat': if (!pos.length) throw new Error('cat: missing file operand'); return pos.map((p) => this.read(p)).join('\n');
+      case 'echo': {
+        const gt = pos.findIndex((a) => a === '>' || a === '>>');
+        if (gt >= 0) {
+          const target = pos[gt + 1]; if (!target) throw new Error('echo: missing redirect target');
+          const text = pos.slice(0, gt).join(' ') + '\n';
+          const p = this.write(target, text, { append: pos[gt] === '>>' });
+          return `wrote ${text.length} bytes to ${p}`;
+        }
+        return pos.join(' ');
+      }
+      case 'mkdir': if (!pos.length) throw new Error('mkdir: missing operand'); return pos.map((p) => { const n = this.norm(p); if (this.exists(n) && !flags.has('p')) throw new Error(`mkdir: exists: ${n}`); this.mkdir(n); return `created ${n}`; }).join('\n');
+      case 'touch': if (!pos.length) throw new Error('touch: missing operand'); return pos.map((p) => { if (!this.exists(p)) this.write(p, ''); return `touched ${this.norm(p)}`; }).join('\n');
+      case 'rm': if (!pos.length) throw new Error('rm: missing operand'); return pos.map((p) => `removed ${this.delete(p, { recursive: flags.has('r') || flags.has('f') })}`).join('\n');
+      case 'mv': if (pos.length < 2) throw new Error('mv: need <src> <dst>'); return `moved ${this.norm(pos[0])} → ${this.move(pos[0], pos[1])}`;
+      case 'tree': return this.tree(pos[0] || '/');
+      default: throw new Error(`${cmd}: command not found (try help)`);
+    }
+  }
+}
+
+/* =====================================================================
+ * SECTION 3 — MEMORY STORE (Dots)
+ * ===================================================================== */
+class MemoryStore extends Emitter {
+  constructor() { super(); this.facts = Store.get('memory', []); if (!Array.isArray(this.facts)) this.facts = []; }
+  save() { Store.set('memory', this.facts); this.emit('change'); }
+  add(text, source = 'manual') {
+    text = String(text || '').trim().replace(/\s+/g, ' ');
+    if (!text) return null;
+    if (this.isDuplicate(text)) return null;
+    const f = { id: uid('mem'), text: text.slice(0, 500), source, created: Date.now(), updated: Date.now() };
+    this.facts.unshift(f); this.save(); return f;
+  }
+  update(id, text) { const f = this.facts.find((x) => x.id === id); if (!f) return; f.text = String(text).trim().slice(0, 500); f.updated = Date.now(); this.save(); }
+  remove(id) { this.facts = this.facts.filter((x) => x.id !== id); this.save(); }
+  clear() { this.facts = []; this.save(); }
+  isDuplicate(text) {
+    const t = text.toLowerCase();
+    if (this.facts.some((f) => f.text.toLowerCase() === t)) return true;
+    const r = tfidfRank(text, this.facts.map((f) => ({ text: f.text, f })), { k: 1, threshold: 0.86 });
+    return r.length > 0;
+  }
+  search(query, k = 5, threshold = 0.08) { return tfidfRank(query, this.facts.map((f) => ({ text: f.text, f })), { k, threshold }).map((r) => ({ ...r.doc.f, score: r.score })); }
+  filter(q) { if (!q.trim()) return this.facts; const ranked = this.search(q, 100, 0.01); const sub = this.facts.filter((f) => f.text.toLowerCase().includes(q.toLowerCase()) && !ranked.some((r) => r.id === f.id)); return [...ranked, ...sub]; }
+  /** Deterministic heuristic extractor — used by the mock engine and as fallback. */
+  static heuristicExtract(userText) {
+    const facts = [];
+    const sentences = String(userText).split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter(Boolean);
+    const rules = [
+      [/\bmy name is ([A-Z][\w-]*(?: [A-Z][\w-]*)?)/i, (m) => `User's name is ${m[1]}`],
+      [/\bcall me ([A-Z][\w-]*)/i, (m) => `User wants to be called ${m[1]}`],
+      [/\bi (?:really )?(?:prefer|like|love|enjoy) (.+)/i, (m) => `User prefers ${m[1]}`],
+      [/\bi (?:hate|dislike|don't like|do not like|avoid) (.+)/i, (m) => `User dislikes ${m[1]}`],
+      [/\bi (?:work|am working) (?:on|at|for|as) (.+)/i, (m) => `User works ${m[0].match(/\b(on|at|for|as)\b/i)[1].toLowerCase()} ${m[1]}`],
+      [/\bi(?:'m| am) (?:a|an) (.+)/i, (m) => `User is a ${m[1]}`],
+      [/\bi (?:use|code in|write) (.+)/i, (m) => `User uses ${m[1]}`],
+      [/\bremember (?:that )?(.+)/i, (m) => m[1].replace(/^i\b/i, 'User').replace(/\bmy\b/gi, "user's")],
+      [/\b(?:always|never) (.+)/i, (m) => `Preference: ${m[0]}`],
+      [/\bmy (favou?rite \w+) is (.+)/i, (m) => `User's ${m[1]} is ${m[2]}`],
+    ];
+    for (const s of sentences) {
+      for (const [re, fmt] of rules) {
+        const m = s.match(re);
+        if (m) { let f = fmt(m).replace(/[.!?]+$/, '').trim(); f = f.replace(/\bI\b/g, 'User'); if (f.length > 8) facts.push(f.charAt(0).toUpperCase() + f.slice(1)); break; }
+      }
+    }
+    return [...new Set(facts)].slice(0, 6);
+  }
+}
+
+/* =====================================================================
+ * SECTION 4 — PERSONA STORE (Grok Bots)
+ * ===================================================================== */
+const DEFAULT_PERSONAS = [
+  { id: 'p_engineer', name: 'Grok Bot · Engineer', system_prompt: 'You are Grok Bot, a pragmatic senior software engineer. Be concise, prefer working code, explain trade-offs briefly. Use tools to inspect and modify the workspace instead of guessing.', knowledge_snippets: 'Coding standards: use 2-space indentation, ES2020+, no external dependencies unless asked.\n\n---\n\nProject layout: web projects live in /project, reusable code in /src, documentation in /docs.\n\n---\n\nTesting: every function written should include a small usage example.' },
+  { id: 'p_designer', name: 'Frontend Artisan', system_prompt: 'You are a meticulous frontend designer. Produce elegant, accessible, responsive HTML/CSS artifacts with strong typography and a dark aesthetic accented by International Orange (#FF4F00).', knowledge_snippets: 'Brand palette: background #080808, accent #FF4F00, borders #222.\n\n---\n\nTypography: Bebas Neue for headings, IBM Plex Mono for body and code.\n\n---\n\nAccessibility: minimum contrast 4.5:1, visible focus states, semantic landmarks.' },
+  { id: 'p_analyst', name: 'Research Analyst', system_prompt: 'You are a careful research analyst. Structure answers with headings and bullet points, state assumptions, and summarise findings in a markdown artifact.', knowledge_snippets: 'Report format: Summary, Findings, Risks, Next steps.\n\n---\n\nCite files in the workspace by path when referencing them.' },
+];
+class PersonaStore extends Emitter {
+  constructor() {
+    super();
+    this.items = Store.get('personas', null);
+    if (!Array.isArray(this.items) || !this.items.length) this.items = deepClone(DEFAULT_PERSONAS);
+    this.selectedId = Store.get('persona.selected', this.items[0].id);
+    if (!this.get(this.selectedId)) this.selectedId = this.items[0].id;
+  }
+  save() { Store.set('personas', this.items); Store.set('persona.selected', this.selectedId); this.emit('change'); }
+  get(id) { return this.items.find((p) => p.id === id); }
+  get selected() { return this.get(this.selectedId) || this.items[0]; }
+  select(id) { if (this.get(id)) { this.selectedId = id; this.save(); } }
+  upsert(p) {
+    const clean = { id: p.id || uid('p'), name: String(p.name || 'Untitled').trim().slice(0, 60) || 'Untitled', system_prompt: String(p.system_prompt || ''), knowledge_snippets: String(p.knowledge_snippets || '') };
+    const i = this.items.findIndex((x) => x.id === clean.id);
+    if (i >= 0) this.items[i] = clean; else this.items.push(clean);
+    this.save(); return clean;
+  }
+  remove(id) {
+    if (this.items.length <= 1) throw new Error('At least one persona is required');
+    this.items = this.items.filter((p) => p.id !== id);
+    if (this.selectedId === id) this.selectedId = this.items[0].id;
+    this.save();
+  }
+  static chunks(p) { return String(p.knowledge_snippets || '').split(/\n\s*-{3,}\s*\n|\n\s*\n/).map((s) => s.trim()).filter(Boolean); }
+  relevantChunks(query, k = 3) {
+    const chunks = PersonaStore.chunks(this.selected);
+    if (!chunks.length) return [];
+    const ranked = tfidfRank(query, chunks.map((text) => ({ text })), { k, threshold: 0.05 }).map((r) => r.doc.text);
+    return ranked.length ? ranked : chunks.slice(0, 1); // always give at least the primary chunk as grounding
+  }
+}
+
+/* =====================================================================
+ * SECTION 5 — LLM CLIENT: SSE PARSER, PROVIDERS, ROUTER, MOCK ENGINE
+ * ===================================================================== */
+
+/** Browser-native incremental Server-Sent-Events parser (handles CRLF, multi-line data, comments, split chunks). */
+class SSEParser {
+  constructor() { this.buf = ''; this.data = []; this.event = ''; }
+  feed(chunk) {
+    this.buf += chunk;
+    const events = [];
+    let nl;
+    while ((nl = this.buf.search(/\r\n|\r|\n/)) >= 0) {
+      const sepLen = this.buf[nl] === '\r' && this.buf[nl + 1] === '\n' ? 2 : 1;
+      if (this.buf[nl] === '\r' && nl + 1 === this.buf.length) break; // wait: CR may be followed by LF in next chunk
+      const line = this.buf.slice(0, nl);
+      this.buf = this.buf.slice(nl + sepLen);
+      this._line(line, events);
+    }
+    return events;
+  }
+  _line(line, events) {
+    if (line === '') { if (this.data.length) events.push({ event: this.event || 'message', data: this.data.join('\n') }); this.data = []; this.event = ''; return; }
+    if (line.startsWith(':')) return;
+    const i = line.indexOf(':');
+    const field = i < 0 ? line : line.slice(0, i);
+    let val = i < 0 ? '' : line.slice(i + 1); if (val.startsWith(' ')) val = val.slice(1);
+    if (field === 'data') this.data.push(val); else if (field === 'event') this.event = val;
+  }
+  flush() { const ev = []; if (this.buf) { this._line(this.buf, ev); this.buf = ''; } this._line('', ev); return ev; }
+}
+
+class HttpError extends Error {
+  constructor(status, message, headers) { super(message); this.name = 'HttpError'; this.status = status; this.headers = headers; this.retryable = status === 429 || status >= 500; }
+}
+
+/** Parse rate-limit/Retry-After style header values to milliseconds-from-now. */
+function parseResetValue(v, now = Date.now()) {
+  if (v == null || v === '') return null;
+  const s = String(v).trim();
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const n = parseFloat(s);
+    if (n > 1e12) return Math.max(0, n - now);          // epoch ms
+    if (n > 1e9) return Math.max(0, n * 1000 - now);    // epoch seconds
+    return n * 1000;                                      // seconds
+  }
+  const dur = s.match(/^(?:(\d+(?:\.\d+)?)h)?(?:(\d+(?:\.\d+)?)m(?!s))?(?:(\d+(?:\.\d+)?)s)?(?:(\d+(?:\.\d+)?)ms)?$/);
+  if (dur && dur.slice(1).some(Boolean)) return ((+dur[1] || 0) * 3600 + (+dur[2] || 0) * 60 + (+dur[3] || 0)) * 1000 + (+dur[4] || 0);
+  const date = Date.parse(s);
+  if (!isNaN(date)) return Math.max(0, date - now);
+  return null;
+}
+function cooldownFromHeaders(headers, status) {
+  if (!headers || typeof headers.get !== 'function') return null;
+  const ra = parseResetValue(headers.get('retry-after'));
+  if (ra != null) return ra;
+  const remainingReq = headers.get('x-ratelimit-remaining-requests') ?? headers.get('x-ratelimit-remaining');
+  const remainingTok = headers.get('x-ratelimit-remaining-tokens');
+  const resets = ['x-ratelimit-reset-requests', 'x-ratelimit-reset-tokens', 'x-ratelimit-reset', 'x-ratelimit-reset-requests-minute', 'x-ratelimit-reset-tokens-minute', 'x-ratelimit-reset-requests-day']
+    .map((h) => parseResetValue(headers.get(h))).filter((x) => x != null);
+  if (status === 429) return resets.length ? Math.max(...resets) : null;
+  if (remainingReq === '0' || remainingTok === '0') return resets.length ? Math.max(...resets) : null;
+  return null;
+}
+
+const PROVIDERS = {
+  gemini: { label: 'Gemini', kind: 'gemini', defaultModel: 'gemini-1.5-flash', url: (m, k) => `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(k)}` },
+  groq: { label: 'Groq', kind: 'openai', defaultModel: 'llama-3.3-70b-versatile', url: () => 'https://api.groq.com/openai/v1/chat/completions' },
+  cerebras: { label: 'Cerebras', kind: 'openai', defaultModel: 'llama3.1-8b', url: () => 'https://api.cerebras.ai/v1/chat/completions' },
+  openrouter: { label: 'OpenRouter', kind: 'openai', defaultModel: 'meta-llama/llama-3.3-70b-instruct:free', freeOnly: true, url: () => 'https://openrouter.ai/api/v1/chat/completions', extraHeaders: () => ({ 'HTTP-Referer': location.origin && location.origin !== 'null' ? location.origin : 'https://agent-studio.local', 'X-Title': 'Agent Studio' }) },
+  mistral: { label: 'Mistral', kind: 'openai', defaultModel: 'mistral-small-latest', url: () => 'https://api.mistral.ai/v1/chat/completions' },
+};
+
+async function readSSE(res, onData, signal) {
+  const parser = new SSEParser();
+  if (!res.body || typeof res.body.getReader !== 'function') {
+    const text = await res.text();
+    for (const ev of [...parser.feed(text), ...parser.flush()]) if (onData(ev.data) === false) return;
+    return;
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  try {
+    while (true) {
+      if (signal && signal.aborted) throw abortError();
+      const { value, done } = await reader.read();
+      if (done) break;
+      for (const ev of parser.feed(dec.decode(value, { stream: true }))) if (onData(ev.data) === false) return;
+    }
+    for (const ev of [...parser.feed(dec.decode()), ...parser.flush()]) if (onData(ev.data) === false) return;
+  } finally { try { reader.releaseLock(); } catch {} }
+}
+
+/** One streaming request to one provider with one key. Resolves with { text, headers }. */
+async function providerStream(pid, key, model, { system, messages, onToken, signal, temperature = 0.4 }) {
+  const P = PROVIDERS[pid];
+  let url, body, headers = { 'Content-Type': 'application/json' };
+  if (P.kind === 'gemini') {
+    const contents = [];
+    for (const m of messages) {
+      const role = m.role === 'assistant' ? 'model' : 'user';
+      if (contents.length && contents[contents.length - 1].role === role) contents[contents.length - 1].parts[0].text += '\n\n' + m.content;
+      else contents.push({ role, parts: [{ text: m.content }] });
+    }
+    url = P.url(model, key);
+    body = { contents, systemInstruction: { parts: [{ text: system }] }, generationConfig: { temperature } };
+  } else {
+    url = P.url(model, key);
+    headers.Authorization = 'Bearer ' + key;
+    if (P.extraHeaders) Object.assign(headers, P.extraHeaders());
+    body = { model, stream: true, temperature, messages: [{ role: 'system', content: system }, ...messages.map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))] };
+  }
+  let res;
+  try { res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal }); }
+  catch (e) { if (e.name === 'AbortError') throw e; const err = new Error(`Network error: ${e.message}`); err.retryable = true; err.network = true; throw err; }
+  if (!res.ok) {
+    let detail = ''; try { detail = (await res.text()).slice(0, 300); } catch {}
+    try { const j = JSON.parse(detail); detail = (j.error && (j.error.message || j.error)) || j.message || detail; } catch {}
+    throw new HttpError(res.status, `${P.label} HTTP ${res.status}: ${typeof detail === 'string' ? detail : JSON.stringify(detail)}`, res.headers);
+  }
+  let text = '';
+  let streamErr = null;
+  await readSSE(res, (data) => {
+    if (data === '[DONE]') return false;
+    let j; try { j = JSON.parse(data); } catch { return; }
+    if (j.error) { streamErr = new HttpError(j.error.code && +j.error.code >= 400 ? +j.error.code : 500, `${P.label} stream error: ${j.error.message || JSON.stringify(j.error)}`, res.headers); return false; }
+    let delta = '';
+    if (P.kind === 'gemini') delta = (((j.candidates || [])[0] || {}).content || {}).parts?.map((p) => p.text || '').join('') || '';
+    else delta = (((j.choices || [])[0] || {}).delta || {}).content || '';
+    if (delta) { text += delta; onToken(delta); }
+  }, signal);
+  if (streamErr) { streamErr.partial = text.length > 0; throw streamErr; }
+  return { text, headers: res.headers };
+}
+
+/* ------------------------- Provider Router ------------------------- */
+class ProviderRouter extends Emitter {
+  constructor(mock) {
+    super();
+    this.mock = mock;
+    const saved = Store.get('router', {});
+    this.order = Array.isArray(saved.order) ? saved.order.filter((p) => PROVIDERS[p]) : [];
+    Object.keys(PROVIDERS).forEach((p) => { if (!this.order.includes(p)) this.order.push(p); });
+    this.cfg = {};
+    for (const p of Object.keys(PROVIDERS)) {
+      const c = (saved.providers || {})[p] || {};
+      this.cfg[p] = { enabled: c.enabled !== false, keys: Array.isArray(c.keys) ? c.keys.filter(Boolean) : [], model: c.model || PROVIDERS[p].defaultModel };
+    }
+    this.state = {}; // runtime: cooldownUntil, keyIdx, keyCooldowns, lastError, ok, fail
+    for (const p of Object.keys(PROVIDERS)) this.state[p] = { cooldownUntil: 0, keyIdx: 0, keyCooldowns: {}, lastError: '', ok: 0, fail: 0, lastUsed: 0 };
+    const persisted = Store.get('router.cooldowns', {});
+    for (const p in persisted) if (this.state[p]) { this.state[p].cooldownUntil = persisted[p].cooldownUntil || 0; this.state[p].keyCooldowns = persisted[p].keyCooldowns || {}; this.state[p].keyIdx = persisted[p].keyIdx || 0; }
+    this.active = 'mock';
+    this.forceMock = !!saved.forceMock;
+    this.maxPasses = 2;
+    this.sleep = sleep; // overridable in tests
+  }
+  save() { Store.set('router', { order: this.order, providers: this.cfg, forceMock: this.forceMock }); this.emit('status'); }
+  saveCooldowns() { const o = {}; for (const p in this.state) o[p] = { cooldownUntil: this.state[p].cooldownUntil, keyCooldowns: this.state[p].keyCooldowns, keyIdx: this.state[p].keyIdx }; Store.set('router.cooldowns', o); }
+  move(pid, dir) { const i = this.order.indexOf(pid), j = i + dir; if (i < 0 || j < 0 || j >= this.order.length) return; [this.order[i], this.order[j]] = [this.order[j], this.order[i]]; this.save(); }
+  setKeys(pid, keys) { this.cfg[pid].keys = [...new Set(keys.map((k) => k.trim()).filter(Boolean))]; this.state[pid].keyIdx = 0; this.save(); }
+  keyId(key) { return 'k' + hashStr(key).toString(36); }
+  configured() { return !this.forceMock && this.order.some((p) => this.cfg[p].enabled && this.cfg[p].keys.length); }
+  resetCooldowns(pid) { const ids = pid ? [pid] : Object.keys(this.state); ids.forEach((p) => { this.state[p].cooldownUntil = 0; this.state[p].keyCooldowns = {}; this.state[p].lastError = ''; }); this.saveCooldowns(); this.emit('status'); }
+  providerStatus(pid, now = Date.now()) {
+    const c = this.cfg[pid], s = this.state[pid];
+    if (!c.enabled) return { code: 'disabled', text: 'disabled' };
+    if (!c.keys.length) return { code: 'nokey', text: 'no key' };
+    if (PROVIDERS[pid].freeOnly && !/:free$/.test(c.model)) return { code: 'error', text: 'model must end with :free' };
+    if (s.cooldownUntil > now) return { code: 'cooldown', text: `cooldown ${Math.ceil((s.cooldownUntil - now) / 1000)}s` };
+    const avail = c.keys.filter((k) => !(s.keyCooldowns[this.keyId(k)] > now)).length;
+    if (!avail) return { code: 'cooldown', text: 'all keys cooling' };
+    return { code: 'ready', text: `ready · ${avail}/${c.keys.length} keys` };
+  }
+  _coolKey(pid, key, ms, reason) {
+    const s = this.state[pid];
+    s.keyCooldowns[this.keyId(key)] = Date.now() + ms;
+    const now = Date.now();
+    const keys = this.cfg[pid].keys;
+    const remaining = keys.map((k) => s.keyCooldowns[this.keyId(k)] || 0).filter((t) => t > now);
+    if (remaining.length === keys.length) s.cooldownUntil = Math.min(...remaining);
+    s.lastError = reason;
+  }
+  /**
+   * Stream through providers in priority order with key rotation and failover.
+   * Returns { text, provider, model }. Falls back to the offline mock engine as final resort.
+   */
+  async stream(opts) {
+    const { signal, onToken, onEvent = () => {} } = opts;
+    if (!this.configured()) return this._mock(opts, 'no providers configured');
+    const errors = [];
+    for (let pass = 0; pass < this.maxPasses; pass++) {
+      let attempted = 0, minWait = Infinity;
+      for (const pid of this.order) {
+        const c = this.cfg[pid], s = this.state[pid], P = PROVIDERS[pid];
+        if (!c.enabled || !c.keys.length) continue;
+        if (P.freeOnly && !/:free$/.test(c.model)) { errors.push(`${pid}: model "${c.model}" is not a :free model`); continue; }
+        const now = Date.now();
+        if (s.cooldownUntil > now) { minWait = Math.min(minWait, s.cooldownUntil - now); onEvent({ type: 'skip', provider: pid, reason: `cooldown ${Math.ceil((s.cooldownUntil - now) / 1000)}s` }); continue; }
+        const startIdx = s.keyIdx % c.keys.length;
+        for (let k = 0; k < c.keys.length; k++) {
+          const idx = (startIdx + k) % c.keys.length;
+          const key = c.keys[idx];
+          const kc = s.keyCooldowns[this.keyId(key)] || 0;
+          if (kc > Date.now()) { minWait = Math.min(minWait, kc - Date.now()); continue; }
+          attempted++;
+          let emitted = false;
+          this.active = pid; this.emit('status');
+          onEvent({ type: 'try', provider: pid, key: idx + 1, keys: c.keys.length, model: c.model });
+          try {
+            const res = await providerStream(pid, key, c.model, { ...opts, onToken: (d) => { emitted = true; onToken(d); } });
+            s.ok++; s.lastUsed = Date.now(); s.lastError = ''; s.keyIdx = idx; s.cooldownUntil = 0;
+            const pre = cooldownFromHeaders(res.headers, 200); // proactive: remaining == 0
+            if (pre) { this._coolKey(pid, key, pre, 'rate limit exhausted (proactive)'); s.keyIdx = (idx + 1) % c.keys.length; }
+            this.saveCooldowns(); this.emit('status');
+            return { text: res.text, provider: pid, model: c.model };
+          } catch (e) {
+            if (e.name === 'AbortError') throw e;
+            s.fail++;
+            const status = e.status || 0;
+            const fromHeaders = cooldownFromHeaders(e.headers, status);
+            let reason = e.message;
+            if (status === 429) this._coolKey(pid, key, fromHeaders ?? 60000, `429 rate limited`);
+            else if (status === 401 || status === 403) this._coolKey(pid, key, 10 * 60000, `${status} auth error`);
+            else if (status >= 500 || e.network) { s.cooldownUntil = Date.now() + (fromHeaders ?? 15000); s.lastError = reason; }
+            else { s.lastError = reason; }
+            s.keyIdx = (idx + 1) % c.keys.length; // round-robin rotation on failure
+            errors.push(`${pid}#${idx + 1}: ${reason}`);
+            onEvent({ type: 'fail', provider: pid, key: idx + 1, status, error: reason, cooldownMs: fromHeaders });
+            this.saveCooldowns(); this.emit('status');
+            if (emitted || e.partial) { const err = new Error(`${P.label} stream interrupted: ${reason}`); err.retryable = true; err.partial = true; throw err; }
+            if (status >= 500 || e.network || (status && status !== 429 && status !== 401 && status !== 403)) break; // provider-level problem → next provider
+            // 429/401/403 → try next key of same provider
+          }
+          if (this.state[pid].cooldownUntil > Date.now()) break;
+        }
+      }
+      if (pass < this.maxPasses - 1) {
+        const wait = isFinite(minWait) ? Math.min(minWait, 8000) : (attempted ? 1000 * (pass + 1) : 0);
+        if (!attempted && !isFinite(minWait)) break;
+        if (wait > 0) { onEvent({ type: 'backoff', ms: wait }); await this.sleep(wait, signal); }
+      }
+    }
+    return this._mock(opts, 'all providers failed: ' + errors.slice(-4).join(' | '));
+  }
+  async _mock(opts, reason) {
+    this.active = 'mock'; this.emit('status');
+    (opts.onEvent || (() => {}))({ type: 'mock', reason });
+    const text = await this.mock.stream(opts);
+    return { text, provider: 'mock', model: 'mock-engine', reason };
+  }
+}
+
+/* ------------------------- Mock Engine (offline) ------------------------- */
+class MockEngine {
+  constructor() { this.delay = Store.get('mock.delay', 6); this.flakySeen = new Set(); }
+  async stream({ system = '', messages = [], mode = 'react', onToken, signal }) {
+    const text = this.generate({ system, messages, mode });
+    const lastUser = [...messages].reverse().find((m) => m.role === 'user' && !m.content.startsWith('<observation'));
+    const key = lastUser ? lastUser.content : '';
+    if (mode === 'react' && /\bflaky\b/i.test(key) && !this.flakySeen.has(key)) {
+      this.flakySeen.add(key);
+      await sleep(this.delay * 10, signal);
+      const e = new Error('Mock transient error: 503 Service Unavailable (simulated)'); e.retryable = true; e.status = 503; throw e;
+    }
+    const rnd = prng(hashStr(text));
+    let i = 0;
+    while (i < text.length) {
+      if (signal && signal.aborted) throw abortError();
+      const n = 3 + Math.floor(rnd() * 12);
+      onToken(text.slice(i, i + n));
+      i += n;
+      if (this.delay > 0) await sleep(this.delay, signal); else await Promise.resolve();
+    }
+    return text;
+  }
+  generate({ system, messages, mode }) {
+    const last = messages[messages.length - 1]?.content || '';
+    if (mode === 'extract') {
+      const m = last.match(/USER:\s*([\s\S]*?)\nASSISTANT:/);
+      return JSON.stringify(MemoryStore.heuristicExtract(m ? m[1] : last));
+    }
+    if (mode === 'decompose') return this.decompose(last.replace(/^[\s\S]*?GOAL:\s*/, '').trim());
+    // ReAct mode
+    let ui = messages.length - 1;
+    while (ui >= 0 && (messages[ui].role !== 'user' || messages[ui].content.startsWith('<observation'))) ui--;
+    const original = ui >= 0 ? messages[ui].content : '';
+    const obs = messages.slice(ui + 1).filter((m) => m.role === 'user' && m.content.startsWith('<observation'));
+    const step = obs.length;
+    const lastObs = obs.length ? obs[obs.length - 1].content.replace(/<\/?observation>/g, '').trim() : '';
+    const persona = (system.match(/## Persona: (.+)/) || [, 'Agent'])[1].trim();
+    const mem = (system.match(/<memory>\n([\s\S]*?)\n<\/memory>/) || [, ''])[1].split('\n').map((s) => s.replace(/^- /, '').trim()).filter(Boolean);
+    const memLine = mem.length ? `\n\n> 🧠 Recalled from memory: ${mem.slice(0, 2).join('; ')}` : '';
+    const rejected = /REJECTED/.test(lastObs);
+    const tc = (name, args) => `<tool_call>${JSON.stringify({ name, args })}</tool_call>`;
+    const q = original.toLowerCase();
+
+    if (original.startsWith('[TASK]')) return this.taskScript(original, step, lastObs, tc, rejected);
+
+    let scenario = 'chat';
+    if (/\b(my name is|i prefer|remember that|call me|i like|i work)\b/.test(q)) scenario = 'chat';
+    else if (/\b(delete|remove|clean ?up|wipe)\b/.test(q)) scenario = 'delete';
+    else if (/\b(deploy|webhook|publish|notify|external api|api call|call the api)\b/.test(q)) scenario = 'api';
+    else if (/\b(landing|website|web ?page|page|html|site)\b/.test(q)) scenario = 'build';
+    else if (/\b(function|code|script|algorithm|debounce|class|python|javascript|typescript)\b/.test(q)) scenario = 'code';
+    else if (/\b(file|files|explore|readme|tree|list|workspace|read)\b/.test(q)) scenario = 'files';
+    else if (/\bflaky\b/.test(q)) scenario = 'files';
+
+    if (rejected) return `Thought: The operation was rejected by the human reviewer, so I will not retry it.\n\nUnderstood — I've left the workspace unchanged. Let me know if you'd like a different approach.${memLine}`;
+
+    if (scenario === 'build') {
+      const name = (original.match(/(?:called|named)\s+["“]?([A-Z][\w&' -]{1,40}?)["”]?(?:[.,!?]|$)/) || original.match(/for (?:an? )?([\w&' -]{3,40}?)(?:[.,!?]|$)/i) || [, 'Nova'])[1].trim();
+      const html = this.landingHtml(name);
+      if (step === 0) return `Thought: As ${persona}, I'll design a standalone landing page for **${escapeMd(name)}**, stream it as a live artifact, then persist it to the VFS.\n\n<artifact type="html" id="landing-page" title="${name.replace(/"/g, '')} — Landing">\n${html}\n</artifact>\n\nSaving the page into the workspace.\n${tc('write_file', { path: '/project/index.html', content: html })}`;
+      if (step === 1) return `Thought: The file is written. Let me verify the project directory contents.\n${tc('execute_command', { command: 'ls -l /project' })}`;
+      return `Done! The landing page for **${escapeMd(name)}** is live in the workspace preview and saved at \`/project/index.html\`.\n\n<artifact type="markdown" id="build-notes" title="Build Notes">\n# Build Notes — ${escapeMd(name)}\n\n## What was built\n- Responsive hero with call-to-action\n- Feature grid (3 cards) and footer\n- Dark theme with **#FF4F00** accent\n\n## Files\n| Path | Purpose |\n|---|---|\n| \`/project/index.html\` | Standalone page |\n\n## Verification\n\`\`\`\n${lastObs.slice(0, 400)}\n\`\`\`\n\n> Ask me again to publish a new **version** of the artifact.\n</artifact>${memLine}`;
+    }
+    if (scenario === 'code') {
+      const code = `/**\n * debounce — delay invoking fn until wait ms have elapsed since the last call.\n * @param {Function} fn\n * @param {number} wait\n * @returns {Function & {cancel: Function}}\n */\nexport function debounce(fn, wait = 200) {\n  let timer = null;\n  const debounced = function (...args) {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn.apply(this, args), wait);\n  };\n  debounced.cancel = () => clearTimeout(timer);\n  return debounced;\n}\n\n// Usage example\nconst log = debounce((msg) => console.log(msg), 300);\nlog('a'); log('b'); // only 'b' is logged after 300ms\n`;
+      if (step === 0) return `Thought: I'll write a small, well-documented \`debounce\` utility and save it to /src.\n\n<artifact type="code" id="debounce-js" title="debounce.js" lang="javascript">\n${code}</artifact>\n\n${tc('write_file', { path: '/src/debounce.js', content: code })}`;
+      if (step === 1) return `Thought: Let me read it back to confirm the write succeeded.\n${tc('read_file', { path: '/src/debounce.js' })}`;
+      return `The \`debounce\` helper is saved at \`/src/debounce.js\` (${code.length} bytes) and verified by reading it back.\n\n- Supports \`this\` binding and arguments\n- Exposes \`.cancel()\`\n- Includes a usage example${memLine}`;
+    }
+    if (scenario === 'files') {
+      if (step === 0) return `Thought: First I'll look at the overall structure of the workspace.\n${tc('execute_command', { command: 'tree /' })}`;
+      if (step === 1) return `Thought: There is a README at the root; reading it will explain the layout.\n${tc('read_file', { path: '/README.md' })}`;
+      return `Here's a summary of the workspace:\n\n<artifact type="markdown" id="workspace-summary" title="Workspace Summary">\n# Workspace Summary\n\n${lastObs.split('\n').filter((l) => /^- /.test(l)).join('\n') || '- (README had no bullet list)'}\n\n**Tip:** open the terminal drawer (Ctrl + backtick) to run \`ls\`, \`cat\`, \`tree\` directly.\n</artifact>\n\nThe README describes ${lastObs.split('\n').filter((l) => /^- /.test(l)).length} top-level areas.${memLine}`;
+    }
+    if (scenario === 'delete') {
+      if (step === 0) return `Thought: The user wants to clean up temporary files. Deleting is destructive, so this will require approval.\n${tc('execute_command', { command: 'rm -r /tmp' })}`;
+      return `Cleanup complete:\n\n\`\`\`\n${lastObs}\n\`\`\`\nA snapshot was taken before deletion — use **Undo** in the Snapshots panel to roll back.${memLine}`;
+    }
+    if (scenario === 'api') {
+      if (step === 0) return `Thought: Deploying requires an external API call. I'll prepare the payload; a human must approve it.\n${tc('call_api', { method: 'POST', url: 'https://api.example.com/v1/deployments', body: { project: 'agent-studio', entry: '/project/index.html', environment: 'production' } })}`;
+      return `Deployment request accepted by the (simulated) external API:\n\n\`\`\`json\n${lastObs}\n\`\`\`${memLine}`;
+    }
+    // chat
+    const facts = MemoryStore.heuristicExtract(original);
+    return `Hi! I'm **${escapeMd(persona)}**, running on the offline mock engine (add API keys in **Providers** to use Gemini, Groq, Cerebras, OpenRouter or Mistral).\n\n${facts.length ? `I noted the following and will remember it:\n${facts.map((f) => `- ${f}`).join('\n')}\n\n` : ''}Try asking me to:\n- **build a landing page** → live HTML artifact + \`write_file\`\n- **write code** → code artifact + read-back verification\n- **explore files** → \`tree\` / \`read_file\` ReAct loop\n- **delete temp files** or **deploy via API** → Human-in-the-Loop approval${memLine}`;
+  }
+  taskScript(original, step, lastObs, tc, rejected) {
+    const task = (original.match(/Task:\s*(.+)/) || [, 'task'])[1].trim();
+    const criteria = (original.match(/Acceptance criteria:\s*(.+)/) || [, ''])[1].trim();
+    const pathM = (criteria + ' ' + task).match(/\/[\w./-]+\.\w+/);
+    const path = pathM ? pathM[0] : `/tasks/${slugify(task)}.md`;
+    const t = task.toLowerCase();
+    if (rejected) return `Task halted: the operation was rejected by the reviewer.`;
+    if (/\b(publish|deploy|external api|notify|webhook)\b/.test(t)) {
+      if (step === 0) return `Thought: This task needs an external API call; requesting approval.\n${tc('call_api', { method: 'POST', url: 'https://api.example.com/v1/publish', body: { task, artifact: path } })}`;
+      return `Task complete — external API responded: ${lastObs.slice(0, 160)}`;
+    }
+    if (/\b(delete|remove|clean)\b/.test(t)) {
+      const target = (task.match(/\/[\w./-]+/) || ['/tmp'])[0];
+      if (step === 0) return `Thought: Removing ${target} as requested (requires approval).\n${tc('execute_command', { command: `rm -r ${target}` })}`;
+      return `Task complete: ${lastObs}`;
+    }
+    if (step === 0) {
+      let content;
+      if (/\.html$/.test(path)) content = `<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(task)}</title><link rel="stylesheet" href="styles.css"></head>\n<body><main><h1>${escapeHtml(task)}</h1><p>Generated by the background scheduler.</p></main></body></html>\n`;
+      else if (/\.css$/.test(path)) content = `:root{--bg:#080808;--accent:#FF4F00}\nbody{margin:0;background:var(--bg);color:#eee;font-family:'IBM Plex Mono',monospace}\nh1{color:var(--accent);font-family:'Bebas Neue',sans-serif;letter-spacing:.05em}\n`;
+      else if (/\.(js|ts)$/.test(path)) content = `// ${task}\nexport function main() {\n  return 'ok';\n}\n`;
+      else content = `# ${task}\n\n## Acceptance criteria\n- ${criteria || 'n/a'}\n\n## Plan\n1. Analyse requirements\n2. Implement\n3. Verify\n`;
+      return `Thought: I'll produce ${path} to satisfy: "${criteria || task}".\n${tc('write_file', { path, content })}`;
+    }
+    return `Task complete. ${path} written; acceptance criteria satisfied: ${criteria || '(none specified)'}.`;
+  }
+  decompose(goal) {
+    const g = goal.replace(/[\n"]/g, ' ').trim() || 'the goal';
+    const slug = slugify(g).slice(0, 24);
+    return JSON.stringify([
+      { task: `Write requirements for: ${g}`, dependencies: [], acceptance_criteria: `File /goals/${slug}/requirements.md exists` },
+      { task: `Create HTML scaffold for ${g}`, dependencies: [0], acceptance_criteria: `File /goals/${slug}/index.html exists` },
+      { task: `Write stylesheet for ${g}`, dependencies: [0], acceptance_criteria: `File /goals/${slug}/styles.css exists` },
+      { task: `Publish ${g} via external API`, dependencies: [1, 2], acceptance_criteria: 'External API call approved and returns 200' },
+    ], null, 2);
+  }
+  landingHtml(name) {
+    const n = escapeHtml(name);
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${n}</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:#080808;color:#eee}
+  header{min-height:70vh;display:grid;place-items:center;text-align:center;padding:40px;background:radial-gradient(circle at 70% 20%,rgba(255,79,0,.35),transparent 55%)}
+  h1{font-size:clamp(40px,8vw,96px);margin:0;letter-spacing:.04em}h1 span{color:#FF4F00}
+  p.lead{color:#aaa;max-width:560px;margin:16px auto 28px;font-size:18px}
+  a.cta{background:#FF4F00;color:#000;padding:14px 28px;border-radius:999px;text-decoration:none;font-weight:700}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;padding:40px;max-width:1000px;margin:auto}
+  .card{border:1px solid #222;border-radius:14px;padding:22px;background:#0d0d0d}.card h3{color:#FF4F00;margin-top:0}
+  footer{text-align:center;color:#555;padding:30px;border-top:1px solid #222}
+</style>
+</head>
+<body>
+<header><div><h1>${n}<span>.</span></h1><p class="lead">Crafted with care, served with fire. Discover what makes ${n} different.</p><a class="cta" href="#features" id="cta">Explore</a></div></header>
+<section class="grid" id="features">
+  <div class="card"><h3>Origin</h3><p>Sourced responsibly, roasted in small batches.</p></div>
+  <div class="card"><h3>Craft</h3><p>Every detail tuned by people who care.</p></div>
+  <div class="card"><h3>Community</h3><p>Built with and for our neighbours.</p></div>
+</section>
+<footer>&copy; ${new Date(2026, 0, 1).getFullYear()} ${n} · <span id="clicks">0</span> explorers</footer>
+<script>let c=0;document.getElementById('cta').addEventListener('click',()=>{document.getElementById('clicks').textContent=++c;});<\/script>
+</body>
+</html>`;
+  }
+}
+function escapeMd(s) { return String(s).replace(/([*_`\[\]])/g, '\\$1'); }
+
+/* =====================================================================
+ * SECTION 6 — MARKDOWN RENDERER (escape-first, XSS-safe)
+ * ===================================================================== */
+function safeUrl(u) {
+  const raw = String(u).replace(/&amp;/g, '&').trim();
+  if (/^(https?:|mailto:|#|\/(?!\/))/i.test(raw) || !/^[a-z][a-z0-9+.-]*:/i.test(raw)) return escapeHtml(raw);
+  return '#';
+}
+function renderInline(text) {
+  // text is RAW (unescaped). Handle backslash escapes + inline code first via placeholders.
+  const ph = [];
+  const hold = (html) => `\u0002${ph.push(html) - 1}\u0002`;
+  let s = String(text).replace(/\\([\\`*_\[\]#>-])/g, (_, c) => hold(escapeHtml(c)));
+  s = s.replace(/`([^`\n]+)`/g, (_, c) => hold(`<code>${escapeHtml(c)}</code>`));
+  s = escapeHtml(s);
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, u) => `<a href="${safeUrl(u)}" target="_blank" rel="noopener noreferrer">[image: ${alt}]</a>`);
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => `<a href="${safeUrl(u)}" target="_blank" rel="noopener noreferrer">${t}</a>`);
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/__([^_]+)__/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[^*\w])\*([^*\n]+)\*(?!\w)/g, '$1<em>$2</em>').replace(/(^|[^_\w])_([^_\n]+)_(?!\w)/g, '$1<em>$2</em>');
+  s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+  return s.replace(/\u0002(\d+)\u0002/g, (_, i) => ph[+i]);
+}
+function renderMarkdown(src) {
+  const blocks = [];
+  let text = String(src || '').replace(/\r\n?/g, '\n');
+  // fenced code (also an unterminated trailing fence while streaming)
+  text = text.replace(/```([\w+-]*)[^\n]*\n([\s\S]*?)(?:```|$(?![\s\S]))/g, (_, lang, code) => `\n\u0001${blocks.push(`<pre><code${lang ? ` data-lang="${escapeHtml(lang)}"` : ''}>${escapeHtml(code.replace(/\n$/, ''))}</code></pre>`) - 1}\u0001\n`);
+  const lines = text.split('\n');
+  const out = [];
+  let para = [], list = null;
+  const flushPara = () => { if (para.length) { out.push(`<p>${para.map(renderInline).join('<br>')}</p>`); para = []; } };
+  const flushList = () => { if (list) { out.push(`<${list.type}>${list.items.map((i) => `<li>${renderInline(i)}</li>`).join('')}</${list.type}>`); list = null; } };
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    let m;
+    if ((m = line.match(/^\u0001(\d+)\u0001$/))) { flushPara(); flushList(); out.push(blocks[+m[1]]); continue; }
+    if (!line.trim()) { flushPara(); flushList(); continue; }
+    if ((m = line.match(/^(#{1,6})\s+(.*)$/))) { flushPara(); flushList(); const l = Math.min(m[1].length, 4); out.push(`<h${l}>${renderInline(m[2])}</h${l}>`); continue; }
+    if (/^\s*([-*_])\s*\1\s*\1[\s\-*_]*$/.test(line)) { flushPara(); flushList(); out.push('<hr>'); continue; }
+    if ((m = line.match(/^>\s?(.*)$/))) { flushPara(); flushList(); const q = [m[1]]; while (i + 1 < lines.length && /^>/.test(lines[i + 1])) q.push(lines[++i].replace(/^>\s?/, '')); out.push(`<blockquote>${q.map(renderInline).join('<br>')}</blockquote>`); continue; }
+    if (/^\|.*\|\s*$/.test(line) && i + 1 < lines.length && /^\|?\s*:?-{2,}/.test(lines[i + 1])) {
+      flushPara(); flushList();
+      const cells = (l) => l.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+      const head = cells(line); i++;
+      const rows = []; while (i + 1 < lines.length && /^\|.*\|\s*$/.test(lines[i + 1])) rows.push(cells(lines[++i]));
+      out.push(`<table><thead><tr>${head.map((h) => `<th>${renderInline(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${renderInline(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
+      continue;
+    }
+    if ((m = line.match(/^\s*([-*+]|\d+[.)])\s+(.*)$/))) {
+      flushPara();
+      const type = /\d/.test(m[1]) ? 'ol' : 'ul';
+      if (list && list.type !== type) flushList();
+      if (!list) list = { type, items: [] };
+      list.items.push(m[2]); continue;
+    }
+    if (list && /^\s{2,}\S/.test(line)) { list.items[list.items.length - 1] += ' ' + line.trim(); continue; }
+    flushList(); para.push(line);
+  }
+  flushPara(); flushList();
+  return out.join('\n');
+}
+
+/* =====================================================================
+ * SECTION 7 — ARTIFACT PARSER (incremental) + ARTIFACT STORE
+ * ===================================================================== */
+const ART_TYPES = { html: 'html', code: 'code', markdown: 'markdown', md: 'markdown', text: 'markdown' };
+function parseAttrs(tag) { const a = {}; tag.replace(/([\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g, (_, k, v1, v2) => { a[k.toLowerCase()] = v1 ?? v2; }); return a; }
+class ArtifactParser {
+  constructor({ onOpen, onUpdate, onClose }) { this.h = { onOpen, onUpdate, onClose }; this.buf = ''; this.cur = null; this.count = 0; }
+  get open() { return !!this.cur; }
+  feed(delta) {
+    this.buf += delta;
+    for (let guard = 0; guard < 1000; guard++) {
+      if (!this.cur) {
+        const idx = this.buf.indexOf('<artifact');
+        if (idx < 0) { const lt = this.buf.lastIndexOf('<'); this.buf = lt >= 0 && '<artifact'.startsWith(this.buf.slice(lt, lt + 9)) ? this.buf.slice(lt) : ''; return; }
+        const end = this.buf.indexOf('>', idx);
+        if (end < 0) { this.buf = this.buf.slice(idx); return; }
+        const after = this.buf[idx + 9];
+        if (after && !/[\s>]/.test(after)) { this.buf = this.buf.slice(idx + 9); continue; }
+        const attrs = parseAttrs(this.buf.slice(idx + 9, end));
+        this.count++;
+        this.cur = { id: slugify(attrs.id || attrs.title || `artifact-${this.count}`), type: ART_TYPES[(attrs.type || 'code').toLowerCase()] || 'code', title: attrs.title || attrs.id || `Artifact ${this.count}`, lang: attrs.lang || attrs.language || '', content: '' };
+        this.h.onOpen && this.h.onOpen(this.cur);
+        this.buf = this.buf.slice(end + 1).replace(/^\n/, '');
+      } else {
+        const ci = this.buf.indexOf('</artifact>');
+        if (ci >= 0) {
+          this.cur.content += this.buf.slice(0, ci);
+          this.cur.content = this.cur.content.replace(/\n$/, '');
+          this.h.onUpdate && this.h.onUpdate(this.cur);
+          this.h.onClose && this.h.onClose(this.cur, true);
+          this.cur = null; this.buf = this.buf.slice(ci + 11); continue;
+        }
+        let hold = 0;
+        for (let k = Math.min(10, this.buf.length); k > 0; k--) if ('</artifact>'.startsWith(this.buf.slice(-k))) { hold = k; break; }
+        const safe = this.buf.slice(0, this.buf.length - hold);
+        if (safe) { this.cur.content += safe; this.h.onUpdate && this.h.onUpdate(this.cur); }
+        this.buf = this.buf.slice(this.buf.length - hold);
+        return;
+      }
+    }
+  }
+  end() { if (this.cur) { this.cur.content += this.buf; this.buf = ''; this.h.onUpdate && this.h.onUpdate(this.cur); this.h.onClose && this.h.onClose(this.cur, false); this.cur = null; } }
+}
+
+class ArtifactStore extends Emitter {
+  constructor() { super(); const s = Store.get('artifacts', {}); this.items = s.items || {}; this.order = (s.order || []).filter((id) => this.items[id]); this.activeId = s.activeId && this.items[s.activeId] ? s.activeId : this.order[this.order.length - 1] || null; this.persist = throttle(() => this.save(), 500); }
+  save() { Store.set('artifacts', { items: this.items, order: this.order, activeId: this.activeId }); }
+  open({ id, type, title, lang }) {
+    let a = this.items[id];
+    if (!a) { a = this.items[id] = { id, type, title, lang, versions: [], viewVersion: 0 }; this.order.push(id); }
+    a.type = type; a.title = title; a.lang = lang || a.lang;
+    a.versions.push({ content: '', ts: Date.now(), complete: false });
+    if (a.versions.length > 20) a.versions.shift();
+    a.viewVersion = a.versions.length - 1; a.streaming = true;
+    this.activeId = id;
+    this.emit('open', a); this.emit('change');
+    return a;
+  }
+  update(id, content) { const a = this.items[id]; if (!a) return; a.versions[a.versions.length - 1].content = content; this.emit('update', a); }
+  close(id, complete) { const a = this.items[id]; if (!a) return; a.streaming = false; a.versions[a.versions.length - 1].complete = complete; this.emit('update', a); this.emit('change'); this.persist(); }
+  remove(id) { delete this.items[id]; this.order = this.order.filter((x) => x !== id); if (this.activeId === id) this.activeId = this.order[this.order.length - 1] || null; this.save(); this.emit('change'); }
+  setActive(id) { if (this.items[id]) { this.activeId = id; this.save(); this.emit('change'); } }
+  get active() { return this.activeId ? this.items[this.activeId] : null; }
+  toJSON() { return { items: this.items, order: this.order, activeId: this.activeId }; }
+  load(s) { this.items = (s && s.items) || {}; this.order = ((s && s.order) || []).filter((id) => this.items[id]); this.activeId = s && s.activeId && this.items[s.activeId] ? s.activeId : this.order[0] || null; Object.values(this.items).forEach((a) => { a.streaming = false; }); this.save(); this.emit('change'); }
+}
+
+/* =====================================================================
+ * SECTION 8 — TOOL CALL PROTOCOL + SNAPSHOTS
+ * ===================================================================== */
+const TOOL_NAMES = ['read_file', 'write_file', 'execute_command', 'call_api'];
+function parseToolCalls(text) {
+  const calls = [];
+  const re = /<tool_call>([\s\S]*?)<\/tool_call>/g; let m;
+  while ((m = re.exec(text))) {
+    const raw = m[1].trim().replace(/^```(?:json)?\s*|\s*```$/g, '');
+    let obj = null, error = null;
+    try { obj = JSON.parse(raw); }
+    catch (e) {
+      try { obj = JSON.parse(raw.replace(/,\s*([}\]])/g, '$1')); } catch { error = 'Invalid JSON in tool call: ' + e.message; }
+    }
+    if (obj && !error) {
+      const name = obj.name || obj.tool || obj.function;
+      const args = obj.args || obj.arguments || obj.parameters || obj.input || {};
+      if (!TOOL_NAMES.includes(name)) error = `Unknown tool "${name}". Available: ${TOOL_NAMES.join(', ')}`;
+      calls.push({ name: String(name), args: typeof args === 'string' ? (() => { try { return JSON.parse(args); } catch { return { value: args }; } })() : args, raw, error });
+    } else calls.push({ name: 'invalid', args: {}, raw, error });
+  }
+  return calls;
+}
+
+class SnapshotLog extends Emitter {
+  constructor(getState, setState) { super(); this.getState = getState; this.setState = setState; this.items = Store.get('snapshots', []); if (!Array.isArray(this.items)) this.items = []; this.max = 40; }
+  save() {
+    while (!Store.set('snapshots', this.items) && this.items.length > 5) this.items.splice(0, Math.ceil(this.items.length / 3));
+    this.emit('change');
+  }
+  take(label, source = 'user') {
+    const snap = { id: uid('snap'), ts: Date.now(), label: String(label).slice(0, 140), source, state: deepClone(this.getState()) };
+    this.items.push(snap);
+    if (this.items.length > this.max) this.items.splice(0, this.items.length - this.max);
+    this.save();
+    return snap;
+  }
+  restore(id) {
+    const s = this.items.find((x) => x.id === id);
+    if (!s) throw new Error('Snapshot not found');
+    this.take(`before rollback to "${s.label}"`, 'rollback');
+    this.setState(deepClone(s.state));
+    this.emit('restored', s);
+    return s;
+  }
+  undo() { const cand = [...this.items].reverse().find((x) => x.source !== 'rollback'); if (!cand) throw new Error('Nothing to undo'); return this.restore(cand.id); }
+  clear() { this.items = []; this.save(); }
+}
+
+/* =====================================================================
+ * SECTION 9 — ReAct ENGINE
+ * ===================================================================== */
+const TOOL_PROTOCOL = `## Tools (ReAct protocol)
+You operate in a multi-step ReAct loop over an in-memory virtual file system (VFS).
+On each turn: write a brief line starting with "Thought:", then, if you need to act, emit ONE tool call and STOP generating:
+<tool_call>{"name":"<tool>","args":{...}}</tool_call>
+Available tools:
+- read_file {"path": "/abs/path"} → file content
+- write_file {"path": "/abs/path", "content": "..."} → writes (creates parent dirs). Overwrites need human approval.
+- execute_command {"command": "ls -l /project"} → VFS shell: ls [-l], cat, echo (> / >>), mkdir [-p], rm [-r], tree, pwd, cd, mv, touch
+- call_api {"method": "POST", "url": "https://...", "body": {...}} → simulated external HTTP call; always requires human approval
+The tool call body MUST be valid JSON (escape newlines and quotes in strings).
+After each tool call you receive <observation>...</observation>. Continue until the task is done, then give your final answer WITHOUT any tool call.
+If an observation says REJECTED, do not retry that operation.
+
+## Artifacts
+For substantial deliverables (web pages, components, code files, documents) wrap the content in:
+<artifact type="html|code|markdown" id="kebab-case-id" title="Human title">...content...</artifact>
+HTML artifacts must be complete standalone documents (inline CSS/JS). Reuse the same id to publish a new version.`;
+
+class ReActEngine extends Emitter {
+  constructor(ctx) { super(); Object.assign(this, ctx); this.maxSteps = Store.get('maxSteps', 6); this.autoApprove = Store.get('autoApprove', false); this.retries = 3; this.backoffBase = 600; }
+  buildSystem(query, { taskMode = false } = {}) {
+    const p = this.personas.selected;
+    const chunks = this.personas.relevantChunks(query);
+    const memories = this.memory.search(query, 5);
+    let sys = `## Persona: ${p.name}\n${p.system_prompt}\n`;
+    if (chunks.length) sys += `\n<knowledge>\n${chunks.map((c) => '- ' + c.replace(/\n/g, ' ')).join('\n')}\n</knowledge>\n`;
+    if (memories.length) sys += `\n<memory>\n${memories.map((m) => '- ' + m.text).join('\n')}\n</memory>\nUse <memory> facts about the user to personalise your answer when relevant.\n`;
+    sys += `\n${TOOL_PROTOCOL}\n`;
+    if (taskMode) sys += `\n## Background task mode\nYou are executing a scheduled background task. Satisfy the acceptance criteria exactly, keep prose minimal, and finish with a one-line summary.\n`;
+    sys += `\nCurrent VFS tree:\n${this.vfs.tree('/').split('\n').slice(0, 60).join('\n')}\n`;
+    return { system: sys, ctx: { memories, chunks, persona: p.name } };
+  }
+  /** LLM call with retry + exponential backoff (router handles provider failover inside each attempt). */
+  async callLLM({ system, messages, mode = 'react', onToken, onReset, signal, label = 'llm', onEvent }) {
+    let lastErr;
+    for (let attempt = 0; attempt < this.retries; attempt++) {
+      try {
+        return await this.router.stream({ system, messages, mode, onToken, signal, onEvent: (ev) => { this.logRouterEvent(ev, label); onEvent && onEvent(ev); } });
+      } catch (e) {
+        if (e.name === 'AbortError') throw e;
+        lastErr = e;
+        if (!e.retryable || attempt === this.retries - 1) break;
+        const wait = this.backoffBase * 2 ** attempt;
+        this.log(`[${label}] attempt ${attempt + 1} failed: ${e.message} — retrying in ${wait}ms`, 'warn');
+        this.emit('retry', { attempt: attempt + 1, wait, error: e.message });
+        onReset && onReset();
+        await sleep(wait, signal);
+      }
+    }
+    throw lastErr;
+  }
+  logRouterEvent(ev, label) {
+    if (ev.type === 'try') this.log(`[router] ${label}: trying ${ev.provider} (key ${ev.key}/${ev.keys}, ${ev.model})`, 'sys');
+    else if (ev.type === 'fail') this.log(`[router] ${ev.provider} key ${ev.key} failed (${ev.status || 'network'}): ${ev.error}${ev.cooldownMs ? ` — cooldown ${Math.round(ev.cooldownMs / 1000)}s` : ''}`, 'warn');
+    else if (ev.type === 'skip') this.log(`[router] skip ${ev.provider}: ${ev.reason}`, 'dim');
+    else if (ev.type === 'backoff') this.log(`[router] all providers busy — backing off ${ev.ms}ms`, 'warn');
+    else if (ev.type === 'mock') this.log(`[router] using offline mock engine (${ev.reason})`, 'sys');
+  }
+  assessRisk(call) {
+    const a = call.args || {};
+    if (call.name === 'write_file' && a.path && this.vfs.isFile(a.path)) return `Overwrites existing file ${this.vfs.norm(a.path)} (${this.vfs.read(a.path).length} bytes)`;
+    if (call.name === 'execute_command') return this.vfs.assessCommand(String(a.command || ''));
+    if (call.name === 'call_api') return `External API payload: ${String(a.method || 'GET').toUpperCase()} ${a.url || '(no url)'}`;
+    return null;
+  }
+  async executeTool(call, { source = 'chat', signal } = {}) {
+    if (call.error) return { ok: false, output: `ERROR: ${call.error}` };
+    let args = call.args || {};
+    const risk = this.assessRisk(call);
+    let edited = false;
+    if (risk && !this.autoApprove) {
+      this.log(`[hitl] approval requested: ${call.name} — ${risk}`, 'warn');
+      const decision = await this.hitl.request({ op: call.name, reason: risk, payload: args, source, signal });
+      if (decision.action === 'reject') { this.log(`[hitl] REJECTED ${call.name}`, 'err'); return { ok: false, rejected: true, output: `REJECTED: the human reviewer rejected this ${call.name} operation.` }; }
+      if (decision.action === 'edit') { args = decision.payload; edited = true; this.log(`[hitl] approved with edits: ${JSON.stringify(args).slice(0, 200)}`, 'ok'); }
+      else this.log(`[hitl] approved ${call.name}`, 'ok');
+    }
+    this.snapshots.take(`before ${call.name} ${(args.path || args.command || args.url || '').toString().slice(0, 80)}`, source);
+    try {
+      let out;
+      switch (call.name) {
+        case 'read_file': if (!args.path) throw new Error('read_file requires "path"'); out = this.vfs.read(args.path); break;
+        case 'write_file': { if (!args.path) throw new Error('write_file requires "path"'); const c = String(args.content ?? ''); const p = this.vfs.write(args.path, c); out = `Wrote ${c.length} bytes to ${p}`; break; }
+        case 'execute_command': { const cmd = String(args.command || ''); this.log(cmd, 'cmd'); out = this.vfs.exec(cmd) || '(no output)'; break; }
+        case 'call_api': {
+          const body = args.body ?? null;
+          const resp = { status: 200, ok: true, id: 'req_' + hashStr(JSON.stringify(args)).toString(36), method: String(args.method || 'GET').toUpperCase(), url: String(args.url || ''), received: body, simulated: true };
+          await sleep(120, signal);
+          out = JSON.stringify(resp, null, 2); break;
+        }
+        default: throw new Error('Unknown tool ' + call.name);
+      }
+      out = String(out);
+      if (out.length > 6000) out = out.slice(0, 6000) + `\n…[truncated ${out.length - 6000} chars]`;
+      this.log(`[tool] ${call.name} ✓ ${out.split('\n')[0].slice(0, 160)}`, 'tool');
+      return { ok: true, output: out, edited, args };
+    } catch (e) {
+      this.log(`[tool] ${call.name} ✗ ${e.message}`, 'err');
+      return { ok: false, output: `ERROR: ${e.message}`, args };
+    }
+  }
+  /**
+   * Run a multi-step ReAct loop.
+   * ui callbacks: context(ctx), stepStart(i), stepDelta(i, raw), stepReset(i), stepEnd(i, raw, info), tool(i, call, result|null)
+   */
+  async run({ input, history = [], ui = {}, signal, source = 'chat', taskMode = false, stopOnReject = false, maxSteps = this.maxSteps }) {
+    const noop = () => {};
+    const U = Object.assign({ context: noop, stepStart: noop, stepDelta: noop, stepReset: noop, stepEnd: noop, tool: noop }, ui);
+    const { system, ctx } = this.buildSystem(input, { taskMode });
+    U.context(ctx);
+    const messages = [...history, { role: 'user', content: input }];
+    const result = { final: '', steps: 0, rejected: false, toolsUsed: 0, provider: null };
+    for (let step = 0; step < maxSteps; step++) {
+      if (signal && signal.aborted) throw abortError();
+      result.steps = step + 1;
+      U.stepStart(step);
+      let raw = '';
+      const local = new AbortController();
+      const onOuterAbort = () => local.abort();
+      if (signal) signal.addEventListener('abort', onOuterAbort, { once: true });
+      let parser;
+      const resetParser = () => {
+        parser = new ArtifactParser({
+          onOpen: (a) => this.artifacts.open(a),
+          onUpdate: (a) => this.artifacts.update(a.id, a.content),
+          onClose: (a, complete) => this.artifacts.close(a.id, complete),
+        });
+      };
+      resetParser();
+      let stoppedForTool = false;
+      let res;
+      try {
+        res = await this.callLLM({
+          system, messages, mode: 'react', signal: local.signal, label: `${source} step ${step + 1}`,
+          onReset: () => { if (parser.open) parser.end(); raw = ''; resetParser(); U.stepReset(step); },
+          onToken: (d) => {
+            raw += d; parser.feed(d); U.stepDelta(step, raw);
+            if (!parser.open && raw.includes('</tool_call>') && !stoppedForTool) { stoppedForTool = true; local.abort(); }
+          },
+        });
+      } catch (e) {
+        if (!(e.name === 'AbortError' && stoppedForTool && !(signal && signal.aborted))) { parser.end(); if (signal) signal.removeEventListener('abort', onOuterAbort); throw e; }
+      }
+      if (signal) signal.removeEventListener('abort', onOuterAbort);
+      parser.end();
+      if (res) result.provider = res.provider;
+      const lastClose = raw.lastIndexOf('</tool_call>');
+      if (lastClose >= 0) raw = raw.slice(0, lastClose + 12);
+      const calls = parseToolCalls(raw);
+      U.stepEnd(step, raw, { provider: result.provider || (stoppedForTool ? this.router.active : null), calls: calls.length });
+      messages.push({ role: 'assistant', content: raw });
+      if (!calls.length) { result.final = raw; break; }
+      const obs = [];
+      for (const call of calls) {
+        U.tool(step, call, null);
+        const r = await this.executeTool(call, { source, signal });
+        result.toolsUsed++;
+        U.tool(step, call, r);
+        obs.push(`[${call.name}] ${r.ok ? 'OK' : r.rejected ? 'REJECTED' : 'ERROR'}\n${r.output}`);
+        if (r.rejected) result.rejected = true;
+      }
+      messages.push({ role: 'user', content: `<observation>\n${obs.join('\n\n')}\n</observation>` });
+      if (result.rejected && stopOnReject) { result.final = 'Stopped: operation rejected by reviewer.'; break; }
+      if (step === maxSteps - 1) result.final = `Reached the maximum of ${maxSteps} steps. Last observation:\n\n\`\`\`\n${obs.join('\n').slice(0, 800)}\n\`\`\``;
+    }
+    return result;
+  }
+  /** Asynchronous memory extraction after a response (LLM-backed, heuristic fallback). */
+  async extractMemories(userText, assistantText) {
+    let facts = [];
+    try {
+      const prompt = `Extract durable facts or preferences about the USER from this exchange (name, preferences, tools, projects, constraints). Return ONLY a JSON array of short third-person strings, or [] if none.\n\nUSER: ${userText}\nASSISTANT: ${String(assistantText).replace(/<artifact[\s\S]*?<\/artifact>/g, '[artifact]').slice(0, 1500)}`;
+      const res = await this.router.stream({ system: 'You extract user memories as strict JSON arrays.', messages: [{ role: 'user', content: prompt }], mode: 'extract', onToken: () => {}, onEvent: () => {} });
+      const m = res.text.match(/\[[\s\S]*\]/);
+      if (m) facts = JSON.parse(m[0]).filter((x) => typeof x === 'string');
+    } catch (e) { this.log(`[memory] LLM extraction failed (${e.message}); using heuristic`, 'warn'); }
+    if (!facts.length) facts = MemoryStore.heuristicExtract(userText);
+    const added = facts.map((f) => this.memory.add(f, 'auto')).filter(Boolean);
+    if (added.length) this.log(`[memory] extracted ${added.length} fact(s): ${added.map((a) => a.text).join(' | ')}`, 'ok');
+    return added;
+  }
+  async decompose(goal, signal) {
+    const prompt = `Decompose the goal into 3-6 concrete tasks executable by an agent with VFS tools. Return ONLY a JSON array of objects: {"task": string, "dependencies": [indices of earlier tasks], "acceptance_criteria": string}. Prefer acceptance criteria that name a file path that must exist.\n\nGOAL: ${goal}`;
+    const res = await this.callLLM({ system: 'You are a planning module that outputs strict JSON.', messages: [{ role: 'user', content: prompt }], mode: 'decompose', onToken: () => {}, signal, label: 'decompose' });
+    const m = res.text.match(/\[[\s\S]*\]/);
+    if (!m) throw new Error('Planner did not return a JSON array');
+    const arr = JSON.parse(m[0]);
+    if (!Array.isArray(arr) || !arr.length) throw new Error('Planner returned no tasks');
+    return arr.map((t) => ({ task: String(t.task || t.title || 'Untitled task'), dependencies: (t.dependencies || []).map(Number).filter((n) => Number.isInteger(n)), acceptance_criteria: String(t.acceptance_criteria || t.criteria || '') }));
+  }
+}
+
+/* =====================================================================
+ * SECTION 10 — TASK QUEUE (Meta Muse scheduler)
+ * ===================================================================== */
+const TASK_STATUSES = ['pending', 'running', 'blocked', 'done', 'failed', 'rejected'];
+class TaskQueue extends Emitter {
+  constructor(engine, snapshots, vfs) {
+    super(); this.engine = engine; this.snapshots = snapshots; this.vfs = vfs;
+    this.tasks = Store.get('tasks', []); if (!Array.isArray(this.tasks)) this.tasks = [];
+    this.tasks.forEach((t) => { if (t.status === 'running') t.status = 'pending'; });
+    this.running = false; this.current = null; this.ctrl = null; this.tickMs = 300;
+  }
+  save() { Store.set('tasks', this.tasks); this.emit('change'); }
+  get(id) { return this.tasks.find((t) => t.id === id); }
+  add({ task, dependencies = [], acceptance_criteria = '' }) {
+    const t = { id: uid('task'), task: String(task).trim(), dependencies: dependencies.filter((d) => this.get(d)), status: 'pending', acceptance_criteria: String(acceptance_criteria).trim(), result: '', log: [], created: Date.now(), attempts: 0 };
+    if (!t.task) throw new Error('Task description is required');
+    this.tasks.push(t); this.refresh(); this.save(); return t;
+  }
+  addMany(list) { const ids = []; list.forEach((t) => { const deps = (t.dependencies || []).map((i) => ids[i]).filter(Boolean); ids.push(this.add({ ...t, dependencies: deps }).id); }); return ids; }
+  remove(id) { if (this.current === id) throw new Error('Cannot remove a running task'); this.tasks = this.tasks.filter((t) => t.id !== id); this.tasks.forEach((t) => { t.dependencies = t.dependencies.filter((d) => d !== id); }); this.refresh(); this.save(); }
+  clear() { if (this.current) throw new Error('Pause the scheduler first'); this.tasks = []; this.save(); }
+  retry(id) { const t = this.get(id); if (!t || t.status === 'running') return; t.status = 'pending'; t.result = ''; t.note = ''; this.refresh(); this.save(); }
+  hasCycle(id, seen = new Set()) { if (seen.has(id)) return true; seen.add(id); const t = this.get(id); return !!t && t.dependencies.some((d) => this.hasCycle(d, new Set(seen))); }
+  /** Recompute blocked/pending based on dependency state. */
+  refresh() {
+    let changed = true, guard = 0;
+    while (changed && guard++ < 50) {
+      changed = false;
+      for (const t of this.tasks) {
+        if (!['pending', 'blocked'].includes(t.status)) continue;
+        let blocked = null;
+        if (this.hasCycle(t.id)) blocked = 'dependency cycle';
+        else for (const d of t.dependencies) { const dt = this.get(d); if (!dt) continue; if (['failed', 'rejected', 'blocked'].includes(dt.status)) { blocked = `dependency "${dt.task.slice(0, 40)}" is ${dt.status}`; break; } }
+        const next = blocked ? 'blocked' : 'pending';
+        if (t.status !== next || (t.note || '') !== (blocked || '')) { t.status = next; t.note = blocked || ''; changed = true; }
+      }
+    }
+  }
+  ready() { return this.tasks.find((t) => t.status === 'pending' && t.dependencies.every((d) => (this.get(d) || { status: 'done' }).status === 'done')); }
+  start() { if (this.running) return; this.running = true; this.emit('state', 'running'); this.loop(); }
+  pause() { this.running = false; this.emit('state', this.current ? 'pausing' : 'paused'); }
+  stopCurrent() { if (this.ctrl) this.ctrl.abort(); }
+  async loop() {
+    while (this.running) {
+      this.refresh();
+      const t = this.ready();
+      if (!t) {
+        const waiting = this.tasks.some((x) => x.status === 'pending');
+        if (!waiting) { this.running = false; this.save(); this.emit('state', 'idle'); this.emit('drained'); return; }
+        await sleep(this.tickMs); continue;
+      }
+      await this.runTask(t);
+      await sleep(this.tickMs);
+    }
+    this.emit('state', 'paused');
+  }
+  async runTask(t) {
+    this.current = t.id; t.status = 'running'; t.attempts++; t.startedAt = Date.now(); t.log = [];
+    this.save();
+    this.snapshots.take(`before task "${t.task.slice(0, 60)}"`, 'task');
+    const L = (msg) => { t.log.push(`${fmtTime(Date.now())} ${msg}`); if (t.log.length > 60) t.log.shift(); this.emit('change'); };
+    L('started');
+    this.engine.log(`[task] ▶ ${t.task}`, 'sys');
+    this.ctrl = new AbortController();
+    try {
+      const deps = t.dependencies.map((d) => this.get(d)).filter(Boolean).map((d) => `- ${d.task}: ${String(d.result).slice(0, 160)}`).join('\n');
+      const input = `[TASK] Task: ${t.task}\nAcceptance criteria: ${t.acceptance_criteria || 'n/a'}\n${deps ? `Completed dependencies:\n${deps}\n` : ''}`;
+      const res = await this.engine.run({
+        input, source: `task:${t.id}`, taskMode: true, stopOnReject: true, signal: this.ctrl.signal,
+        ui: {
+          stepStart: (i) => L(`step ${i + 1}`),
+          stepEnd: (i, raw) => { const th = (raw.match(/Thought:\s*(.+)/) || [])[1]; if (th) L(`thought: ${th.slice(0, 140)}`); },
+          tool: (i, call, r) => { if (r) L(`${call.name} → ${r.rejected ? 'REJECTED' : r.ok ? 'ok' : 'error'}: ${r.output.split('\n')[0].slice(0, 120)}`); },
+        },
+      });
+      t.result = res.final.replace(/<[^>]+>/g, '').trim().slice(0, 600);
+      if (res.rejected) { t.status = 'rejected'; L('rejected by reviewer'); }
+      else {
+        const verdict = this.checkAcceptance(t, res);
+        t.status = verdict.ok ? 'done' : 'failed';
+        t.note = verdict.reason;
+        L(`acceptance: ${verdict.ok ? 'PASS' : 'FAIL'} — ${verdict.reason}`);
+      }
+    } catch (e) {
+      t.status = e.name === 'AbortError' ? 'pending' : 'failed';
+      t.note = e.name === 'AbortError' ? 'interrupted' : e.message;
+      L(`${t.status}: ${t.note}`);
+      if (e.name !== 'AbortError') this.emit('error', { task: t, error: e });
+    } finally {
+      t.finishedAt = Date.now(); this.current = null; this.ctrl = null;
+      this.engine.log(`[task] ${t.status.toUpperCase()} ${t.task}`, t.status === 'done' ? 'ok' : 'err');
+      this.refresh(); this.save();
+      this.emit('finished', t);
+    }
+  }
+  checkAcceptance(t, res) {
+    const crit = t.acceptance_criteria || '';
+    const paths = crit.match(/\/[\w./-]+\.\w+|\/[\w-]+(?:\/[\w.-]+)+/g) || [];
+    if (paths.length) {
+      const missing = paths.filter((p) => !this.vfs.exists(p));
+      return missing.length ? { ok: false, reason: `missing: ${missing.join(', ')}` } : { ok: true, reason: `verified ${paths.join(', ')} exist` };
+    }
+    if (/approv/i.test(crit) && res.toolsUsed === 0) return { ok: false, reason: 'no approved operation was executed' };
+    return res.final.trim() ? { ok: true, reason: 'completed with a final answer' } : { ok: false, reason: 'empty result' };
+  }
+  toJSON() { return this.tasks; }
+  load(arr) { this.tasks = Array.isArray(arr) ? arr.filter((t) => t && t.id && t.task).map((t) => ({ ...t, status: TASK_STATUSES.includes(t.status) && t.status !== 'running' ? t.status : 'pending', dependencies: Array.isArray(t.dependencies) ? t.dependencies : [], log: Array.isArray(t.log) ? t.log : [] })) : []; this.refresh(); this.save(); }
+}
+
+/* =====================================================================
+ * SECTION 11 — UI: bootstrapping, wiring and rendering
+ * ===================================================================== */
+const vfs = new VFS(Store.get('vfs', null) || undefined);
+const memory = new MemoryStore();
+const personas = new PersonaStore();
+const artifacts = new ArtifactStore();
+const mock = new MockEngine();
+const router = new ProviderRouter(mock);
+
+/* ---------- Toasts ---------- */
+function toast(msg, type = 'info', ms = 4200) {
+  const box = $('#toasts'); if (!box) return;
+  const el = document.createElement('div');
+  el.className = `toast ${type}`; el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  el.textContent = msg;
+  box.appendChild(el);
+  while (box.children.length > 5) box.firstChild.remove();
+  setTimeout(() => el.remove(), ms);
+}
+window.addEventListener('error', (e) => { if (e.message && !/ResizeObserver/.test(e.message)) toast('Error: ' + e.message, 'error'); });
+window.addEventListener('unhandledrejection', (e) => { const m = e.reason && e.reason.message ? e.reason.message : String(e.reason); if (!/Abort/.test(m)) toast('Error: ' + m, 'error'); });
+
+/* ---------- Terminal log ---------- */
+let termLines = 0;
+function log(msg, type = 'info') {
+  const box = $('#termLog'); if (!box) return;
+  const line = document.createElement('div');
+  line.className = 'tl ' + type;
+  const ts = document.createElement('span'); ts.className = 'ts'; ts.textContent = fmtTime(Date.now());
+  if (type !== 'cmd') line.appendChild(ts);
+  line.appendChild(document.createTextNode(String(msg)));
+  const stick = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+  box.appendChild(line);
+  while (box.children.length > 1500) box.firstChild.remove();
+  if (stick) box.scrollTop = box.scrollHeight;
+  termLines++; $('#termCount').textContent = termLines;
+}
+
+/* ---------- Modal manager with focus trap ---------- */
+const modalStack = [];
+function openModal(el, focusSel) {
+  el.hidden = false; el.removeAttribute('inert'); el.setAttribute('aria-hidden', 'false');
+  modalStack.push({ el, prev: document.activeElement });
+  $('#scrim').hidden = false;
+  Anim.in(el, { y: 0, scale: 0.97 });
+  setTimeout(() => { const f = focusSel ? $(focusSel, el) : el.querySelector('input,textarea,select,button'); f && f.focus(); }, 30);
+}
+function closeModal(el) {
+  const i = modalStack.findIndex((m) => m.el === el); if (i < 0) return;
+  const [{ prev }] = modalStack.splice(i, 1);
+  if (el.id === 'memDrawer') { el.classList.remove('open'); el.setAttribute('inert', ''); el.setAttribute('aria-hidden', 'true'); $('#memBtn').setAttribute('aria-expanded', 'false'); }
+  else el.hidden = true;
+  if (!modalStack.length) $('#scrim').hidden = true;
+  if (prev && prev.focus) prev.focus();
+}
+document.addEventListener('keydown', (e) => {
+  const top = modalStack[modalStack.length - 1];
+  if (top && e.key === 'Tab') {
+    const f = $$('a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select,textarea:not([disabled]),[tabindex]:not([tabindex="-1"])', top.el).filter((x) => x.offsetParent !== null);
+    if (f.length) { const first = f[0], last = f[f.length - 1]; if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); } else if (!top.el.contains(document.activeElement)) { e.preventDefault(); first.focus(); } }
+  }
+  if (e.key === 'Escape' && top) { e.preventDefault(); if (top.el.id === 'hitlModal') hitl.decide('reject'); else if (top.el.id === 'promptModal') promptResolve(null); else closeModal(top.el); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); selectTab($('#tab-chat')); $('#chatInput').focus(); }
+  if (e.ctrlKey && (e.key === '`' || e.code === 'Backquote')) { e.preventDefault(); toggleTerminal(); }
+  if (e.ctrlKey && e.key.toLowerCase() === 'm' && !top) { e.preventDefault(); openMemory(); }
+});
+$('#scrim').addEventListener('click', () => { const top = modalStack[modalStack.length - 1]; if (top && top.el.id !== 'hitlModal') top.el.id === 'promptModal' ? promptResolve(null) : closeModal(top.el); });
+$$('[data-close]').forEach((b) => b.addEventListener('click', () => closeModal(b.closest('.modal'))));
+
+/* Generic prompt modal (returns Promise<string|null>) */
+let promptResolver = null;
+function promptResolve(v) { const r = promptResolver; promptResolver = null; closeModal($('#promptModal')); r && r(v); }
+function askInput(title, label, value = '') {
+  return new Promise((resolve) => {
+    promptResolver = resolve;
+    $('#promptTitle').textContent = title; $('#promptLabel').firstChild.textContent = label; $('#promptInput').value = value;
+    openModal($('#promptModal'), '#promptInput');
+  });
+}
+$('#promptForm').addEventListener('submit', (e) => { e.preventDefault(); promptResolve($('#promptInput').value); });
+$('#promptOk').addEventListener('click', () => promptResolve($('#promptInput').value));
+$('#promptCancel').addEventListener('click', () => promptResolve(null));
+
+/* ---------- Tabs (ARIA, arrow-key navigation) ---------- */
+function selectTab(tab) {
+  const list = tab.closest('[role=tablist]');
+  $$('[role=tab]', list).forEach((t) => { const sel = t === tab; t.setAttribute('aria-selected', String(sel)); t.tabIndex = sel ? 0 : -1; const p = document.getElementById(t.getAttribute('aria-controls')); if (p) p.hidden = !sel; });
+  const panel = document.getElementById(tab.getAttribute('aria-controls')); if (panel) Anim.in(panel, { y: 4, duration: 0.2 });
+}
+$$('[data-tablist]').forEach((list) => {
+  list.addEventListener('click', (e) => { const t = e.target.closest('[role=tab]'); if (t) selectTab(t); });
+  list.addEventListener('keydown', (e) => {
+    const tabs = $$('[role=tab]', list); const i = tabs.indexOf(document.activeElement); if (i < 0) return;
+    let n = null; if (e.key === 'ArrowRight') n = (i + 1) % tabs.length; else if (e.key === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length; else if (e.key === 'Home') n = 0; else if (e.key === 'End') n = tabs.length - 1;
+    if (n != null) { e.preventDefault(); tabs[n].focus(); selectTab(tabs[n]); }
+  });
+});
+
+/* ---------- Human-in-the-Loop ---------- */
+class HitlUI {
+  constructor() { this.queue = []; this.cur = null; this.original = ''; }
+  request(req) {
+    return new Promise((resolve) => {
+      const item = { ...req, resolve };
+      if (req.signal) req.signal.addEventListener('abort', () => { if (this.cur === item) this.decide('reject'); else { this.queue = this.queue.filter((q) => q !== item); resolve({ action: 'reject' }); this.updateBadge(); } }, { once: true });
+      this.queue.push(item); this.updateBadge();
+      if (!this.cur) this.next();
+    });
+  }
+  updateBadge() { $('#hitlQueue').textContent = this.queue.length ? `+${this.queue.length} queued` : ''; }
+  next() {
+    if (this.cur || !this.queue.length) { this.updateBadge(); return; }
+    this.cur = this.queue.shift(); this.updateBadge();
+    const c = this.cur;
+    $('#hitlReason').textContent = '⚠ ' + c.reason;
+    $('#hitlOp').textContent = c.op;
+    $('#hitlSource').textContent = `· requested by ${c.source}`;
+    this.original = JSON.stringify(c.payload, null, 2);
+    const ta = $('#hitlPayload'); ta.value = this.original; ta.readOnly = true;
+    $('#hitlEdit').setAttribute('aria-pressed', 'false'); $('#hitlEdit').textContent = 'Edit'; $('#hitlEditHint').textContent = '(read-only — click Edit to modify)';
+    $('#hitlApprove').textContent = 'Approve';
+    openModal($('#hitlModal'), '#hitlReject');
+    Anim.pulse($('#hitlModal'));
+  }
+  toggleEdit() {
+    const ta = $('#hitlPayload'); ta.readOnly = !ta.readOnly;
+    const on = !ta.readOnly;
+    $('#hitlEdit').setAttribute('aria-pressed', String(on)); $('#hitlEdit').textContent = on ? 'Lock' : 'Edit';
+    $('#hitlEditHint').textContent = on ? '(editing — Approve will use your edited payload)' : '(read-only — click Edit to modify)';
+    $('#hitlApprove').textContent = on ? 'Approve edited' : 'Approve';
+    if (on) ta.focus();
+  }
+  decide(action) {
+    const c = this.cur; if (!c) return;
+    let result = { action: 'approve', payload: c.payload };
+    if (action === 'reject') result = { action: 'reject' };
+    else {
+      const txt = $('#hitlPayload').value;
+      if (txt.trim() !== this.original.trim()) {
+        try { result = { action: 'edit', payload: JSON.parse(txt) }; }
+        catch (e) { toast('Edited payload is not valid JSON: ' + e.message, 'error'); return; }
+      }
+    }
+    this.cur = null;
+    closeModal($('#hitlModal'));
+    c.resolve(result);
+    setTimeout(() => { if (!this.cur) this.next(); }, 60);
+  }
+}
+const hitl = new HitlUI();
+$('#hitlApprove').addEventListener('click', () => hitl.decide('approve'));
+$('#hitlReject').addEventListener('click', () => hitl.decide('reject'));
+$('#hitlEdit').addEventListener('click', () => hitl.toggleEdit());
+
+/* ---------- Engine wiring ---------- */
+let tasks; // assigned below
+const snapshots = new SnapshotLog(
+  () => ({ vfs: vfs.toJSON(), tasks: tasks ? tasks.toJSON() : [], memory: memory.facts, artifacts: artifacts.toJSON() }),
+  (s) => { if (s.vfs) vfs.load(s.vfs); if (s.tasks && tasks) tasks.load(s.tasks); if (Array.isArray(s.memory)) { memory.facts = s.memory; memory.save(); } if (s.artifacts) artifacts.load(s.artifacts); },
+);
+const engine = new ReActEngine({ router, vfs, memory, personas, artifacts, hitl, snapshots, log });
+tasks = new TaskQueue(engine, snapshots, vfs);
+
+/* ---------- Persistence hooks ---------- */
+const persistVfs = throttle(() => Store.set('vfs', vfs.toJSON()), 400);
+const renderTreesThrottled = throttle(() => { renderTrees(); }, 120);
+vfs.on('change', () => { persistVfs(); renderTreesThrottled(); if (viewer.path && !vfs.isFile(viewer.path)) closeViewer(); else if (viewer.path && !viewer.dirty) refreshViewer(); });
+vfs.on('cwd', () => { $('#termCwd').textContent = vfs.cwd + ' $'; });
+
+/* =====================================================================
+ * UI · Router header + provider modal
+ * ===================================================================== */
+const STATUS_COLORS = { ready: 'var(--ok)', cooldown: 'var(--warn)', error: 'var(--err)', nokey: '#444', disabled: '#2a2a2a' };
+function renderRouterStatus() {
+  const configured = router.configured();
+  const active = router.active;
+  $('#activeProvider').textContent = active === 'mock' ? (configured ? 'mock (fallback)' : 'mock · offline') : PROVIDERS[active].label + ' · ' + router.cfg[active].model;
+  $('#statusDot').className = 'status-dot ' + (active === 'mock' ? 'mock' : 'live');
+  const strip = $('#routerStrip'); strip.textContent = '';
+  router.order.forEach((pid, i) => {
+    const st = router.providerStatus(pid);
+    const d = document.createElement('span');
+    d.className = 'badge'; d.style.borderColor = STATUS_COLORS[st.code]; d.style.color = st.code === 'ready' ? 'var(--ok)' : st.code === 'cooldown' ? 'var(--warn)' : 'var(--dim)';
+    if (pid === active) { d.style.background = 'var(--accent-soft)'; d.style.color = '#fff'; }
+    d.textContent = `${i + 1}·${pid.slice(0, 4)}`; d.title = `${PROVIDERS[pid].label}: ${st.text}${router.state[pid].lastError ? '\nlast error: ' + router.state[pid].lastError : ''}`;
+    strip.appendChild(d);
+  });
+  if (!$('#providerModal').hidden) updateProviderRowStatus();
+}
+function renderProviderRows() {
+  const box = $('#providerRows'); box.textContent = '';
+  router.order.forEach((pid, i) => {
+    const P = PROVIDERS[pid], c = router.cfg[pid];
+    const row = document.createElement('div'); row.className = 'card prow'; row.dataset.pid = pid;
+    row.innerHTML = `
+      <div class="row" style="justify-content:space-between">
+        <div class="row"><span class="badge">#${i + 1}</span><strong style="font-family:var(--display);font-size:20px;letter-spacing:.06em">${escapeHtml(P.label)}</strong>
+          <span class="badge pstat"></span><span class="dim pstats" style="font-size:11px"></span></div>
+        <div class="row">
+          <label class="row" style="gap:4px;font-size:12px"><input type="checkbox" data-act="enabled" ${c.enabled ? 'checked' : ''}> enabled</label>
+          <button class="btn sm" data-act="up" aria-label="Move ${escapeHtml(P.label)} up" ${i === 0 ? 'disabled' : ''}>↑</button>
+          <button class="btn sm" data-act="down" aria-label="Move ${escapeHtml(P.label)} down" ${i === router.order.length - 1 ? 'disabled' : ''}>↓</button>
+          <button class="btn sm" data-act="reset">Reset cooldown</button>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:8px">
+        <label class="field">Model${P.freeOnly ? ' (must end with :free)' : ''}<input class="input" data-act="model" value="${escapeHtml(c.model)}" spellcheck="false"></label>
+        <label class="field">API keys (one per line — rotated round-robin)<textarea class="input keys" data-act="keys" rows="2" spellcheck="false" autocomplete="off" style="-webkit-text-security:disc">${escapeHtml(c.keys.join('\n'))}</textarea></label>
+      </div>
+      <div class="dim perr" style="font-size:11px;margin-top:4px"></div>`;
+    box.appendChild(row);
+  });
+  updateProviderRowStatus();
+}
+function updateProviderRowStatus() {
+  $$('#providerRows .prow').forEach((row) => {
+    const pid = row.dataset.pid, st = router.providerStatus(pid), s = router.state[pid];
+    const b = $('.pstat', row); b.textContent = st.text; b.style.borderColor = STATUS_COLORS[st.code]; b.style.color = STATUS_COLORS[st.code] === '#444' ? 'var(--muted)' : STATUS_COLORS[st.code];
+    $('.pstats', row).textContent = `ok ${s.ok} · fail ${s.fail}${router.active === pid ? ' · ACTIVE' : ''}`;
+    $('.perr', row).textContent = s.lastError ? 'last error: ' + s.lastError : '';
+  });
+}
+$('#providerRows').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const pid = b.closest('.prow').dataset.pid;
+  if (b.dataset.act === 'up' || b.dataset.act === 'down') { router.move(pid, b.dataset.act === 'up' ? -1 : 1); renderProviderRows(); const nb = $(`.prow[data-pid="${pid}"] [data-act="${b.dataset.act}"]`); (nb && !nb.disabled ? nb : $(`.prow[data-pid="${pid}"] [data-act="enabled"]`)).focus(); }
+  if (b.dataset.act === 'reset') { router.resetCooldowns(pid); toast(`${PROVIDERS[pid].label} cooldown cleared`, 'success'); }
+});
+$('#providerRows').addEventListener('change', (e) => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const pid = el.closest('.prow').dataset.pid;
+  if (el.dataset.act === 'enabled') router.cfg[pid].enabled = el.checked;
+  if (el.dataset.act === 'model') { const v = el.value.trim() || PROVIDERS[pid].defaultModel; if (PROVIDERS[pid].freeOnly && !/:free$/.test(v)) toast('OpenRouter is restricted to :free models — the provider will be skipped until the model ends with ":free"', 'warn'); router.cfg[pid].model = v; }
+  if (el.dataset.act === 'keys') router.setKeys(pid, el.value.split(/[\n,]+/));
+  router.save();
+});
+$('#providerRows').addEventListener('focusin', (e) => { if (e.target.classList.contains('keys')) e.target.style.webkitTextSecurity = 'none'; });
+$('#providerRows').addEventListener('focusout', (e) => { if (e.target.classList.contains('keys')) e.target.style.webkitTextSecurity = 'disc'; });
+$('#routerBtn').addEventListener('click', () => { renderProviderRows(); $('#forceMock').checked = router.forceMock; $('#mockDelay').value = mock.delay; openModal($('#providerModal')); });
+$('#forceMock').addEventListener('change', (e) => { router.forceMock = e.target.checked; router.save(); });
+$('#mockDelay').addEventListener('change', (e) => { mock.delay = clamp(parseInt(e.target.value, 10) || 0, 0, 200); Store.set('mock.delay', mock.delay); });
+$('#resetCooldowns').addEventListener('click', () => { router.resetCooldowns(); toast('All cooldowns cleared', 'success'); });
+router.on('status', renderRouterStatus);
+setInterval(() => { if (Object.values(router.state).some((s) => s.cooldownUntil > 0 || Object.keys(s.keyCooldowns).length)) renderRouterStatus(); }, 1000);
+
+/* =====================================================================
+ * UI · Personas
+ * ===================================================================== */
+let editingPersonaId = personas.selectedId;
+function renderPersonaSelect() {
+  const sel = $('#personaSelect'); sel.textContent = '';
+  personas.items.forEach((p) => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o); });
+  sel.value = personas.selectedId;
+}
+function renderPersonaModal() {
+  const list = $('#personaList'); list.textContent = '';
+  personas.items.forEach((p) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = (p.id === personas.selectedId ? '● ' : '') + p.name;
+    b.setAttribute('aria-current', String(p.id === editingPersonaId)); b.addEventListener('click', () => { editingPersonaId = p.id; renderPersonaModal(); });
+    list.appendChild(b);
+  });
+  const p = personas.get(editingPersonaId) || { name: '', system_prompt: '', knowledge_snippets: '' };
+  $('#pfName').value = p.name; $('#pfPrompt').value = p.system_prompt; $('#pfKnow').value = p.knowledge_snippets;
+  $('#personaDelete').disabled = !personas.get(editingPersonaId) || personas.items.length <= 1;
+}
+$('#personaSelect').addEventListener('change', (e) => { personas.select(e.target.value); toast(`Persona: ${personas.selected.name}`, 'success', 1800); });
+$('#personaEditBtn').addEventListener('click', () => { editingPersonaId = personas.selectedId; renderPersonaModal(); openModal($('#personaModal'), '#pfName'); });
+$('#personaNew').addEventListener('click', () => { editingPersonaId = null; renderPersonaModal(); $('#pfName').focus(); });
+$('#personaForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name = $('#pfName').value.trim(); if (!name) { toast('Persona name is required', 'error'); return; }
+  const saved = personas.upsert({ id: editingPersonaId || undefined, name, system_prompt: $('#pfPrompt').value, knowledge_snippets: $('#pfKnow').value });
+  editingPersonaId = saved.id; renderPersonaModal(); toast('Persona saved', 'success');
+});
+$('#personaDelete').addEventListener('click', () => { try { personas.remove(editingPersonaId); editingPersonaId = personas.selectedId; renderPersonaModal(); toast('Persona deleted', 'success'); } catch (e) { toast(e.message, 'error'); } });
+$('#personaUse').addEventListener('click', () => { if (!editingPersonaId) { toast('Save the persona first', 'warn'); return; } personas.select(editingPersonaId); renderPersonaModal(); toast(`Using ${personas.selected.name}`, 'success'); });
+personas.on('change', renderPersonaSelect);
+
+/* =====================================================================
+ * UI · Memory drawer
+ * ===================================================================== */
+function openMemory() { const d = $('#memDrawer'); d.classList.add('open'); $('#memBtn').setAttribute('aria-expanded', 'true'); renderMemory(); openModal(d, '#memSearch'); }
+$('#memBtn').addEventListener('click', openMemory);
+$('#memClose').addEventListener('click', () => closeModal($('#memDrawer')));
+function renderMemory() {
+  $('#memCount').textContent = memory.facts.length;
+  const drawerOpen = $('#memDrawer').classList.contains('open');
+  if (!drawerOpen) return;
+  const q = $('#memSearch').value;
+  const list = $('#memList'); list.textContent = '';
+  const items = memory.filter(q);
+  $('#memInfo').textContent = q.trim() ? `${items.length} match(es) for "${q}"` : `${memory.facts.length} fact(s) stored`;
+  if (!items.length) { const d = document.createElement('div'); d.className = 'muted'; d.textContent = q ? 'No matching facts.' : 'No memories yet. Chat with the agent — facts and preferences are extracted automatically.'; list.appendChild(d); }
+  items.forEach((f) => {
+    const card = document.createElement('div'); card.className = 'fact'; card.dataset.id = f.id;
+    card.innerHTML = `<div class="ft"></div><div class="fm"><span>${escapeHtml(f.source)} · ${escapeHtml(new Date(f.updated || f.created).toLocaleString())}${f.score != null ? ` · score ${f.score.toFixed(2)}` : ''}</span><span class="row" style="gap:4px"><button class="btn sm" data-act="edit">Edit</button><button class="btn sm danger" data-act="del" aria-label="Delete fact">✕</button></span></div>`;
+    $('.ft', card).textContent = f.text;
+    list.appendChild(card);
+  });
+}
+$('#memSearch').addEventListener('input', renderMemory);
+$('#memForm').addEventListener('submit', (e) => { e.preventDefault(); const f = memory.add($('#memNew').value, 'manual'); if (f) { $('#memNew').value = ''; toast('Fact saved', 'success', 1500); } else toast('Empty or duplicate fact', 'warn'); });
+$('#memClearAll').addEventListener('click', () => { if (!memory.facts.length) return; snapshots.take('before clearing memory', 'user'); memory.clear(); toast('Memory cleared (snapshot taken)', 'success'); });
+$('#memList').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const card = b.closest('.fact'), id = card.dataset.id;
+  if (b.dataset.act === 'del') { memory.remove(id); return; }
+  if (b.dataset.act === 'edit') {
+    const f = memory.facts.find((x) => x.id === id); if (!f) return;
+    const ft = $('.ft', card); ft.textContent = '';
+    const ta = document.createElement('textarea'); ta.className = 'input'; ta.rows = 3; ta.value = f.text; ta.style.width = '100%'; ta.setAttribute('aria-label', 'Edit fact');
+    ft.appendChild(ta); ta.focus();
+    b.textContent = 'Save'; b.dataset.act = 'save';
+    ta.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); b.click(); } if (ev.key === 'Escape') { ev.stopPropagation(); renderMemory(); } });
+    return;
+  }
+  if (b.dataset.act === 'save') { const ta = $('textarea', card); if (ta.value.trim()) { memory.update(id, ta.value); toast('Fact updated', 'success', 1500); } else memory.remove(id); }
+});
+memory.on('change', renderMemory);
+
+/* =====================================================================
+ * UI · VFS trees + file viewer
+ * ===================================================================== */
+const viewer = { path: null, dirty: false, preview: false };
+function buildTree(container, { selected, compact } = {}) {
+  container.textContent = '';
+  const mk = (path) => {
+    const ul = document.createElement('ul'); ul.setAttribute('role', path === '/' ? 'tree' : 'group');
+    vfs.list(path).forEach((item) => {
+      const li = document.createElement('li'); li.setAttribute('role', 'treeitem');
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'node' + (item.path === selected ? ' sel' : '');
+      b.dataset.path = item.path; b.dataset.type = item.type;
+      b.innerHTML = item.type === 'dir' ? `<span class="dir">▾ ${escapeHtml(item.name)}/</span>` : `<span>· ${escapeHtml(item.name)}</span>${compact ? '' : `<span class="dim" style="margin-left:auto;font-size:10px">${item.size}b</span>`}`;
+      li.appendChild(b);
+      if (item.type === 'dir') { li.setAttribute('aria-expanded', 'true'); li.appendChild(mk(item.path)); }
+      ul.appendChild(li);
+    });
+    return ul;
+  };
+  const root = document.createElement('div'); root.className = 'dim'; root.style.fontSize = '11px'; root.textContent = '/ (root)';
+  container.appendChild(root); container.appendChild(mk('/'));
+}
+function renderTrees() { buildTree($('#fileTree'), { selected: viewer.path }); buildTree($('#termTree'), { selected: viewer.path, compact: true }); }
+function onTreeClick(e) {
+  const b = e.target.closest('.node'); if (!b) return;
+  if (b.dataset.type === 'file') { openFile(b.dataset.path); selectTab($('#tab-files')); }
+  else { const ul = b.nextElementSibling; if (ul) { ul.hidden = !ul.hidden; b.parentElement.setAttribute('aria-expanded', String(!ul.hidden)); b.firstChild.textContent = (ul.hidden ? '▸ ' : '▾ ') + b.dataset.path.split('/').pop() + '/'; } }
+}
+$('#fileTree').addEventListener('click', onTreeClick);
+$('#termTree').addEventListener('click', onTreeClick);
+function openFile(path) {
+  if (!vfs.isFile(path)) { toast('Not a file: ' + path, 'error'); return; }
+  viewer.path = vfs.norm(path); viewer.dirty = false; viewer.preview = false;
+  refreshViewer(); renderTrees();
+}
+function refreshViewer() {
+  const p = viewer.path; if (!p) return;
+  $('#viewerPath').textContent = p; $('#viewerPath').classList.remove('muted');
+  const ta = $('#viewerText'); ta.disabled = false; ta.value = vfs.read(p);
+  const isHtml = /\.html?$/i.test(p), isMd = /\.md$/i.test(p);
+  $('#viewerPreviewBtn').disabled = !(isHtml || isMd);
+  $('#viewerSaveBtn').disabled = false; $('#viewerDelBtn').disabled = false;
+  if (viewer.preview && (isHtml || isMd)) { $('#viewerFrame').srcdoc = isHtml ? ta.value : wrapDoc(`<div class="md">${renderMarkdown(ta.value)}</div>`); $('#viewerFrame').hidden = false; ta.hidden = true; }
+  else { $('#viewerFrame').hidden = true; ta.hidden = false; }
+  $('#viewerPreviewBtn').setAttribute('aria-pressed', String(viewer.preview)); $('#viewerPreviewBtn').textContent = viewer.preview ? 'Edit' : 'Preview';
+}
+function closeViewer() { viewer.path = null; $('#viewerPath').textContent = 'No file selected'; $('#viewerPath').classList.add('muted'); const ta = $('#viewerText'); ta.value = ''; ta.disabled = true; ta.hidden = false; $('#viewerFrame').hidden = true; ['#viewerSaveBtn', '#viewerDelBtn', '#viewerPreviewBtn'].forEach((s) => { $(s).disabled = true; }); }
+$('#viewerText').addEventListener('input', () => { viewer.dirty = true; });
+$('#viewerText').addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); $('#viewerSaveBtn').click(); } });
+$('#viewerPreviewBtn').addEventListener('click', () => { viewer.preview = !viewer.preview; if (viewer.dirty) { $('#viewerSaveBtn').click(); } refreshViewer(); });
+$('#viewerSaveBtn').addEventListener('click', () => { if (!viewer.path) return; try { snapshots.take(`before manual edit ${viewer.path}`, 'user'); viewer.dirty = false; vfs.write(viewer.path, $('#viewerText').value); log(`saved ${viewer.path}`, 'ok'); toast('Saved ' + viewer.path, 'success', 1500); } catch (e) { toast(e.message, 'error'); } });
+$('#viewerDelBtn').addEventListener('click', async () => {
+  if (!viewer.path) return; const p = viewer.path;
+  const d = engine.autoApprove ? { action: 'approve' } : await hitl.request({ op: 'delete_file', reason: `Deletes ${p}`, payload: { path: p }, source: 'user' });
+  if (d.action === 'reject') { toast('Delete rejected', 'warn'); return; }
+  const target = d.action === 'edit' && d.payload && d.payload.path ? d.payload.path : p;
+  try { snapshots.take(`before delete ${target}`, 'user'); vfs.delete(target, { recursive: true }); log(`deleted ${target}`, 'warn'); toast('Deleted ' + target, 'success'); } catch (e) { toast(e.message, 'error'); }
+});
+$('#newFileBtn').addEventListener('click', async () => {
+  const p = await askInput('New file', 'Path', '/docs/new-file.md'); if (!p) return;
+  try { if (vfs.exists(p)) throw new Error('Already exists: ' + vfs.norm(p)); snapshots.take(`before create ${p}`, 'user'); vfs.write(p, ''); openFile(p); selectTab($('#tab-files')); $('#viewerText').focus(); } catch (e) { toast(e.message, 'error'); }
+});
+
+/* =====================================================================
+ * UI · Terminal drawer
+ * ===================================================================== */
+function toggleTerminal(force) {
+  const t = $('#terminal'); const open = force != null ? force : t.classList.contains('collapsed');
+  t.classList.toggle('collapsed', !open); $('#termHead').setAttribute('aria-expanded', String(open)); $('#termChevron').textContent = open ? '▼' : '▲';
+  if (open) { renderTrees(); $('#termInput').focus(); const b = $('#termLog'); b.scrollTop = b.scrollHeight; }
+}
+$('#termHead').addEventListener('click', (e) => { if (!e.target.closest('#termClearBtn')) toggleTerminal(); });
+$('#termHead').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTerminal(); } });
+$('#termClearBtn').addEventListener('click', (e) => { e.stopPropagation(); $('#termLog').textContent = ''; termLines = 0; $('#termCount').textContent = '0'; });
+const termHist = []; let termHistIdx = 0;
+$('#termForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const inp = $('#termInput'); const line = inp.value.trim(); inp.value = ''; if (!line) return;
+  termHist.push(line); termHistIdx = termHist.length;
+  log(line, 'cmd');
+  if (line === 'clear') { $('#termClearBtn').click(); return; }
+  try {
+    if (/^(rm|mv|mkdir|touch|echo\b.*>)/.test(line)) snapshots.take(`before terminal: ${line.slice(0, 60)}`, 'terminal');
+    const out = vfs.exec(line); if (out) log(out, 'out');
+  } catch (err) { log(err.message, 'err'); }
+});
+$('#termInput').addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowUp' && termHist.length) { e.preventDefault(); termHistIdx = Math.max(0, termHistIdx - 1); e.target.value = termHist[termHistIdx] || ''; }
+  if (e.key === 'ArrowDown') { e.preventDefault(); termHistIdx = Math.min(termHist.length, termHistIdx + 1); e.target.value = termHist[termHistIdx] || ''; }
+});
+
+/* =====================================================================
+ * UI · Artifacts (sandboxed iframe, tabs, versions)
+ * ===================================================================== */
+let artSourceMode = false;
+function wrapDoc(body, extraCss = '') {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:18px;background:#0b0b0b;color:#e6e6e6;font:14px/1.6 'IBM Plex Mono',ui-monospace,monospace}pre{background:#060606;border:1px solid #222;border-radius:8px;padding:12px;overflow:auto;white-space:pre-wrap}code{font-family:inherit}.md h1,.md h2,.md h3{font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:.05em;color:#fff;font-weight:400}.md a{color:#FF4F00}.md blockquote{border-left:3px solid #FF4F00;margin:0;padding-left:10px;color:#999}.md table{border-collapse:collapse}.md td,.md th{border:1px solid #333;padding:4px 8px}.md code{background:#1a1a1a;padding:0 4px;border-radius:4px}.md pre code{background:none}.lang{color:#FF4F00;font-size:11px;text-transform:uppercase;letter-spacing:.1em}${extraCss}</style></head><body>${body}</body></html>`;
+}
+function artifactDoc(a, content) {
+  if (a.type === 'html') return content;
+  if (a.type === 'markdown') return wrapDoc(`<div class="md">${renderMarkdown(content)}</div>`);
+  return wrapDoc(`<div class="lang">${escapeHtml(a.lang || 'code')} · ${escapeHtml(a.title)}</div><pre><code>${escapeHtml(content)}</code></pre>`);
+}
+let lastSrcdoc = '';
+function renderArtifactView() {
+  const a = artifacts.active;
+  const tabsBox = $('#artTabs'); tabsBox.textContent = '';
+  artifacts.order.forEach((id) => {
+    const it = artifacts.items[id];
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'art-tab'; b.setAttribute('role', 'tab'); b.dataset.id = id;
+    b.setAttribute('aria-selected', String(a && a.id === id)); b.tabIndex = a && a.id === id ? 0 : -1;
+    b.innerHTML = `${it.streaming ? '<span class="live">● </span>' : ''}${escapeHtml(it.title)} <span class="dim">${escapeHtml(it.type)} v${it.versions.length}</span>`;
+    tabsBox.appendChild(b);
+  });
+  const vs = $('#artVersion'); vs.textContent = '';
+  ['#artVersion', '#artViewBtn', '#artSaveBtn', '#artDelBtn'].forEach((s) => { $(s).disabled = !a; });
+  if (!a) { $('#artEmpty').hidden = false; $('#artFrame').hidden = true; $('#artSource').hidden = true; lastSrcdoc = ''; return; }
+  a.versions.forEach((v, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `v${i + 1}${v.complete ? '' : i === a.versions.length - 1 && a.streaming ? ' (streaming)' : ' (partial)'} · ${fmtTime(v.ts)}`; vs.appendChild(o); });
+  vs.value = a.viewVersion;
+  renderArtifactContent();
+}
+function renderArtifactContent() {
+  const a = artifacts.active; if (!a) return;
+  const v = a.versions[clamp(a.viewVersion, 0, a.versions.length - 1)]; if (!v) return;
+  $('#artEmpty').hidden = true;
+  $('#artViewBtn').textContent = artSourceMode ? 'Preview' : 'Source'; $('#artViewBtn').setAttribute('aria-pressed', String(artSourceMode));
+  if (artSourceMode) { $('#artFrame').hidden = true; const pre = $('#artSource'); pre.hidden = false; pre.textContent = v.content; return; }
+  $('#artSource').hidden = true; $('#artFrame').hidden = false;
+  const doc = artifactDoc(a, v.content);
+  if (doc !== lastSrcdoc) { lastSrcdoc = doc; $('#artFrame').srcdoc = doc; }
+}
+const liveArtifactRender = throttle(() => { renderArtifactContent(); }, 280);
+artifacts.on('change', renderArtifactView);
+artifacts.on('open', () => { selectTab($('#tab-arts')); });
+artifacts.on('update', (a) => { if (artifacts.active && artifacts.active.id === a.id && a.viewVersion === a.versions.length - 1) liveArtifactRender(); });
+$('#artTabs').addEventListener('click', (e) => { const b = e.target.closest('.art-tab'); if (b) artifacts.setActive(b.dataset.id); });
+$('#artTabs').addEventListener('keydown', (e) => { const tabs = $$('.art-tab', $('#artTabs')); const i = tabs.indexOf(document.activeElement); if (i < 0) return; let n = null; if (e.key === 'ArrowRight') n = (i + 1) % tabs.length; if (e.key === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length; if (n != null) { e.preventDefault(); artifacts.setActive(tabs[n].dataset.id); $$('.art-tab')[n].focus(); } });
+$('#artVersion').addEventListener('change', (e) => { const a = artifacts.active; if (a) { a.viewVersion = +e.target.value; artifacts.save(); renderArtifactContent(); } });
+$('#artViewBtn').addEventListener('click', () => { artSourceMode = !artSourceMode; lastSrcdoc = ''; renderArtifactContent(); });
+$('#artDelBtn').addEventListener('click', () => { const a = artifacts.active; if (a) { artifacts.remove(a.id); toast('Artifact removed', 'success', 1500); } });
+$('#artSaveBtn').addEventListener('click', async () => {
+  const a = artifacts.active; if (!a) return;
+  const ext = a.type === 'html' ? 'html' : a.type === 'markdown' ? 'md' : ({ javascript: 'js', typescript: 'ts', python: 'py', css: 'css', json: 'json' })[a.lang] || 'txt';
+  const p = await askInput('Save artifact to VFS', 'Path', `/artifacts/${a.id}.${ext}`); if (!p) return;
+  const content = a.versions[a.viewVersion].content;
+  if (vfs.isFile(p) && !engine.autoApprove) { const d = await hitl.request({ op: 'write_file', reason: `Overwrites existing file ${vfs.norm(p)}`, payload: { path: p }, source: 'user' }); if (d.action === 'reject') return; }
+  try { snapshots.take(`before saving artifact ${a.id}`, 'user'); vfs.write(p, content); toast('Saved to ' + vfs.norm(p), 'success'); } catch (e) { toast(e.message, 'error'); }
+});
+
+/* =====================================================================
+ * UI · Chat / execution stream
+ * ===================================================================== */
+let chat = Store.get('chat', []); if (!Array.isArray(chat)) chat = [];
+let busy = false, runCtrl = null;
+const saveChat = () => { if (chat.length > 60) chat = chat.slice(-60); Store.set('chat', chat); };
+
+function formatAssistant(raw) {
+  const ph = [];
+  const hold = (h) => `\u0003${ph.push(h) - 1}\u0003`;
+  const chip = (attrs, live) => { const id = slugify(attrs.id || attrs.title || 'artifact'); return hold(`<button type="button" class="art-chip" data-art="${escapeHtml(id)}">◧ ${escapeHtml(attrs.title || id)} <span class="dim">${escapeHtml(attrs.type || 'code')}</span>${live ? ' <span class="spin" aria-label="streaming"></span>' : ''}</button>`); };
+  let s = String(raw);
+  s = s.replace(/<artifact\b([^>]*)>[\s\S]*?<\/artifact>/g, (_, a) => '\n' + chip(parseAttrs(a), false) + '\n');
+  s = s.replace(/<artifact\b([^>]*)>[\s\S]*$/, (_, a) => '\n' + chip(parseAttrs(a), true) + '\n');
+  s = s.replace(/<tool_call>([\s\S]*?)<\/tool_call>/g, (_, body) => { let n = 'tool'; try { n = JSON.parse(body).name || n; } catch {} return '\n' + hold(`<span class="badge" style="color:var(--accent)">⚙ ${escapeHtml(n)}</span>`) + '\n'; });
+  s = s.replace(/<tool_call>[\s\S]*$/, () => '\n' + hold('<span class="badge st-run"><span class="spin"></span> preparing tool call…</span>') + '\n');
+  s = s.replace(/<[a-z_]*$/i, (m) => ('<artifact'.startsWith(m) || '<tool_call'.startsWith(m) ? '' : m));
+  s = s.replace(/^Thought:/gm, '**Thought:**');
+  return renderMarkdown(s).replace(/\u0003(\d+)\u0003/g, (_, i) => ph[+i]);
+}
+
+function scrollChat(force) { const b = $('#chatLog'); if (force || b.scrollTop + b.clientHeight >= b.scrollHeight - 80) b.scrollTop = b.scrollHeight; }
+function appendUser(text) {
+  const d = document.createElement('div'); d.className = 'msg user'; d.textContent = text;
+  $('#chatLog').appendChild(d); Anim.in(d, { x: 10, y: 0 }); scrollChat(true);
+}
+/** Builds an assistant message view. Returns ReAct UI callbacks + a serialisable record. */
+function createAssistantView(persona, record) {
+  const data = record || { persona, ctx: null, steps: [], provider: null, error: null, note: null };
+  const el = document.createElement('div'); el.className = 'msg assistant';
+  el.innerHTML = `<div class="who"><span></span><span class="badge prov"></span></div><div class="ctx"></div><div class="steps"></div><div class="foot"></div>`;
+  $('.who span', el).textContent = data.persona;
+  $('#chatLog').appendChild(el); Anim.in(el);
+  const stepEls = [];
+  const renderCtx = () => {
+    const box = $('.ctx', el); box.textContent = ''; const c = data.ctx; if (!c) return;
+    const mk = (label, items) => { const d = document.createElement('details'); const s = document.createElement('summary'); s.textContent = label; d.appendChild(s); const ul = document.createElement('ul'); items.forEach((t) => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); d.appendChild(ul); box.appendChild(d); };
+    if (c.memories && c.memories.length) mk(`🧠 ${c.memories.length} memor${c.memories.length === 1 ? 'y' : 'ies'} injected`, c.memories.map((m) => m.text || m));
+    if (c.chunks && c.chunks.length) mk(`📚 ${c.chunks.length} knowledge chunk${c.chunks.length === 1 ? '' : 's'}`, c.chunks);
+  };
+  const ensureStep = (i) => {
+    if (stepEls[i]) return stepEls[i];
+    const s = document.createElement('div'); s.className = 'step';
+    s.innerHTML = `<div class="step-h"><span>Step ${i + 1}</span><span class="spin"></span><span class="sp dim"></span></div><div class="md body"></div><div class="tools"></div>`;
+    $('.steps', el).appendChild(s); stepEls[i] = s; return s;
+  };
+  const renderStepBody = (i) => { const st = data.steps[i]; const s = ensureStep(i); $('.body', s).innerHTML = formatAssistant(st.raw); };
+  const throttled = new Map();
+  const renderTool = (i, j) => {
+    const s = ensureStep(i), t = data.steps[i].tools[j];
+    let d = $$('.tool-trace', s)[j];
+    if (!d) { d = document.createElement('details'); d.className = 'tool-trace'; d.innerHTML = '<summary></summary><pre class="args"></pre><pre class="obs"></pre>'; $('.tools', s).appendChild(d); }
+    const stCls = t.status === 'ok' ? 'st-ok' : t.status === 'running' ? 'st-run' : t.status === 'rejected' ? 'st-warn' : 'st-err';
+    const argStr = t.name === 'write_file' ? `${t.args.path || ''} (${String(t.args.content || '').length} bytes)` : t.name === 'execute_command' ? t.args.command : t.name === 'call_api' ? `${t.args.method || 'GET'} ${t.args.url || ''}` : t.args.path || '';
+    $('summary', d).innerHTML = `<span class="${stCls}">${t.status === 'running' ? '<span class="spin"></span>' : t.status === 'ok' ? '✓' : t.status === 'rejected' ? '⊘' : '✗'}</span><span class="tname">${escapeHtml(t.name)}</span><span class="muted">${escapeHtml(String(argStr || '').slice(0, 120))}</span>${t.edited ? '<span class="badge st-warn">edited</span>' : ''}`;
+    $('.args', d).textContent = 'args: ' + JSON.stringify(t.args, null, 2).slice(0, 3000);
+    $('.obs', d).textContent = t.output != null ? 'observation:\n' + t.output : 'running…';
+  };
+  const ui = {
+    context: (ctx) => { data.ctx = { memories: ctx.memories.map((m) => m.text), chunks: ctx.chunks, persona: ctx.persona }; renderCtx(); },
+    stepStart: (i) => { data.steps[i] = { raw: '', tools: [], provider: null }; const s = ensureStep(i); stepEls.forEach((x) => x.classList.remove('active')); s.classList.add('active'); scrollChat(); },
+    stepDelta: (i, raw) => { data.steps[i].raw = raw; if (!throttled.has(i)) throttled.set(i, rafThrottle(() => { renderStepBody(i); scrollChat(); })); throttled.get(i)(); },
+    stepReset: (i) => { data.steps[i].raw = ''; renderStepBody(i); $('.sp', ensureStep(i)).textContent = 'retrying…'; },
+    stepEnd: (i, raw, info) => {
+      data.steps[i].raw = raw; data.steps[i].provider = info.provider; renderStepBody(i);
+      const s = ensureStep(i); const sp = $('.spin', s); sp && sp.remove(); $('.sp', s).textContent = info.provider ? `via ${info.provider}` : '';
+      if (info.provider) { data.provider = info.provider; $('.prov', el).textContent = info.provider; }
+    },
+    tool: (i, call, r) => {
+      const tools = data.steps[i].tools;
+      if (!r) { tools.push({ name: call.name, args: call.args || {}, status: 'running', output: null }); renderTool(i, tools.length - 1); scrollChat(); return; }
+      const t = tools[tools.length - 1]; Object.assign(t, { status: r.rejected ? 'rejected' : r.ok ? 'ok' : 'error', output: r.output, edited: !!r.edited, args: r.args || t.args });
+      renderTool(i, tools.length - 1); scrollChat();
+    },
+  };
+  const finish = (res) => { stepEls.forEach((x) => x.classList.remove('active')); if (res && res.final && !data.steps.some((s) => s.raw === res.final)) { data.note = res.final; const n = document.createElement('div'); n.className = 'md'; n.innerHTML = renderMarkdown(res.final); $('.foot', el).appendChild(n); } $$('.step-h .spin', el).forEach((x) => x.remove()); };
+  const fail = (msg) => { data.error = msg; const n = document.createElement('div'); n.className = 'st-err'; n.style.marginTop = '6px'; n.textContent = '✗ ' + msg; $('.foot', el).appendChild(n); finish(); };
+  if (record) { // re-hydrate from storage
+    renderCtx(); if (data.provider) $('.prov', el).textContent = data.provider;
+    data.steps.forEach((st, i) => { ensureStep(i); renderStepBody(i); const sp = $('.spin', stepEls[i]); sp && sp.remove(); $('.sp', stepEls[i]).textContent = st.provider ? `via ${st.provider}` : ''; st.tools.forEach((_, j) => renderTool(i, j)); });
+    if (data.note) { const n = document.createElement('div'); n.className = 'md'; n.innerHTML = renderMarkdown(data.note); $('.foot', el).appendChild(n); }
+    if (data.error) { const n = document.createElement('div'); n.className = 'st-err'; n.textContent = '✗ ' + data.error; $('.foot', el).appendChild(n); }
+  }
+  return { ui, data, finish, fail, el };
+}
+function renderChatHistory() {
+  $('#chatLog').textContent = '';
+  if (!chat.length) {
+    const d = document.createElement('div'); d.className = 'msg assistant';
+    d.innerHTML = `<div class="who">AGENT STUDIO</div><div class="md">${renderMarkdown('Welcome! This workspace combines **personas**, **memory**, live **artifacts**, a **ReAct coding agent** over a virtual file system, and a **background task scheduler** with human approval.\n\nNo API key? Everything runs on the deterministic **offline mock engine** — try one of the example prompts below. Add keys via the **Router** button to stream from Gemini, Groq, Cerebras, OpenRouter (:free) or Mistral with automatic failover.')}</div>`;
+    $('#chatLog').appendChild(d);
+  }
+  chat.forEach((m) => { if (m.role === 'user') appendUser(m.content); else createAssistantView(m.view?.persona || 'Agent', m.view || { persona: 'Agent', steps: [{ raw: m.content, tools: [] }] }); });
+  scrollChat(true);
+}
+function setBusy(b) { busy = b; $('#sendBtn').disabled = b; $('#stopBtn').disabled = !b; $('#chatInput').setAttribute('aria-busy', String(b)); }
+function historyForLLM() {
+  return chat.slice(-10).map((m) => ({ role: m.role, content: String(m.content || '').replace(/(<artifact\b[^>]*>)([\s\S]*?)(<\/artifact>)/g, (_, o, body, c) => o + (body.length > 1200 ? body.slice(0, 1200) + '\n…[truncated]' : body) + c).slice(0, 4000) })).filter((m) => m.content);
+}
+async function sendMessage(text) {
+  text = String(text || '').trim();
+  if (!text) return;
+  if (busy) { toast('The agent is still working — press Stop to cancel', 'warn'); return; }
+  const history = historyForLLM();
+  if (!chat.length) $('#chatLog').textContent = '';
+  chat.push({ role: 'user', content: text }); saveChat();
+  appendUser(text);
+  setBusy(true); runCtrl = new AbortController();
+  const view = createAssistantView(personas.selected.name);
+  try {
+    const res = await engine.run({ input: text, history, ui: view.ui, signal: runCtrl.signal });
+    view.finish(res);
+    chat.push({ role: 'assistant', content: res.final, view: view.data }); saveChat();
+    engine.extractMemories(text, res.final).then((added) => { if (added.length) toast(`🧠 Remembered ${added.length} new fact${added.length > 1 ? 's' : ''}`, 'success', 2500); }).catch((e) => log('[memory] ' + e.message, 'err'));
+  } catch (e) {
+    if (e.name === 'AbortError') { view.fail('Stopped by user'); log('[chat] run aborted', 'warn'); }
+    else { view.fail(e.message); toast(e.message, 'error'); log('[chat] ' + e.message, 'err'); }
+    chat.push({ role: 'assistant', content: view.data.steps.map((s) => s.raw).join('\n') || '(no response)', view: view.data }); saveChat();
+  } finally { setBusy(false); runCtrl = null; }
+}
+$('#composer').addEventListener('submit', (e) => { e.preventDefault(); const t = $('#chatInput').value; $('#chatInput').value = ''; sendMessage(t); });
+$('#chatInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('#composer').requestSubmit(); } });
+$('#stopBtn').addEventListener('click', () => { if (runCtrl) runCtrl.abort(); });
+$$('.hints [data-prompt]').forEach((b) => b.addEventListener('click', () => { if (busy) { toast('Agent is busy', 'warn'); return; } sendMessage(b.dataset.prompt); }));
+$('#chatLog').addEventListener('click', (e) => { const c = e.target.closest('.art-chip'); if (c) { if (artifacts.items[c.dataset.art]) { artifacts.setActive(c.dataset.art); selectTab($('#tab-arts')); } else toast('Artifact no longer exists', 'warn'); } });
+$('#clearChatBtn').addEventListener('click', () => { if (busy) { toast('Stop the current run first', 'warn'); return; } chat = []; saveChat(); renderChatHistory(); });
+
+/* =====================================================================
+ * UI · Tasks, scheduler, snapshots
+ * ===================================================================== */
+function renderTasks() {
+  const list = $('#taskList'); list.textContent = '';
+  if (!tasks.tasks.length) { const d = document.createElement('div'); d.className = 'muted'; d.textContent = 'No tasks yet. Decompose a goal or add tasks manually, then run the scheduler.'; list.appendChild(d); }
+  tasks.tasks.forEach((t, idx) => {
+    const d = document.createElement('div'); d.className = 'task'; d.dataset.id = t.id;
+    const deps = t.dependencies.map((id) => { const dt = tasks.get(id); return dt ? `#${tasks.tasks.indexOf(dt) + 1}` : '?'; }).join(', ');
+    d.innerHTML = `<div><span class="dim">#${idx + 1}</span> <span class="t"></span></div>
+      <div class="actions"><span class="badge s-${t.status}">${t.status === 'running' ? '<span class="spin"></span> ' : ''}${escapeHtml(t.status)}</span>
+        ${['failed', 'rejected', 'blocked', 'done'].includes(t.status) ? '<button class="btn sm" data-act="retry">Retry</button>' : ''}
+        ${t.status === 'running' ? '<button class="btn sm danger" data-act="stop">Stop</button>' : '<button class="btn sm danger" data-act="del" aria-label="Delete task">✕</button>'}</div>
+      <div class="meta"><div>deps: ${escapeHtml(deps || 'none')} · criteria: <span class="crit"></span></div><div class="note"></div>
+      <details><summary>log (${t.log.length})${t.result ? ' · result' : ''}</summary><pre style="white-space:pre-wrap;margin:4px 0" class="tlog"></pre></details></div>`;
+    $('.t', d).textContent = t.task;
+    $('.crit', d).textContent = t.acceptance_criteria || '—';
+    $('.note', d).textContent = t.note ? '↳ ' + t.note : '';
+    $('.tlog', d).textContent = t.log.join('\n') + (t.result ? `\n\nRESULT: ${t.result}` : '');
+    list.appendChild(d);
+  });
+  const sel = $('#tfDeps'); const prev = new Set($$('option:checked', sel).map((o) => o.value)); sel.textContent = '';
+  tasks.tasks.forEach((t, i) => { const o = document.createElement('option'); o.value = t.id; o.textContent = `#${i + 1} ${t.task.slice(0, 60)}`; o.selected = prev.has(t.id); sel.appendChild(o); });
+}
+const renderTasksThrottled = rafThrottle(renderTasks);
+tasks.on('change', renderTasksThrottled);
+tasks.on('state', (s) => { $('#schedState').textContent = s; $('#schedStartBtn').disabled = s === 'running'; $('#schedPauseBtn').disabled = s !== 'running'; if (s === 'idle') toast('Scheduler idle — queue drained', 'success', 2500); });
+tasks.on('finished', (t) => toast(`Task ${t.status}: ${t.task.slice(0, 50)}`, t.status === 'done' ? 'success' : t.status === 'rejected' ? 'warn' : 'error', 2500));
+$('#taskList').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-act]'); if (!b) return; const id = b.closest('.task').dataset.id;
+  try { if (b.dataset.act === 'retry') tasks.retry(id); if (b.dataset.act === 'del') tasks.remove(id); if (b.dataset.act === 'stop') tasks.stopCurrent(); } catch (err) { toast(err.message, 'error'); }
+});
+$('#taskForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  try { tasks.add({ task: $('#tfTask').value, acceptance_criteria: $('#tfCriteria').value, dependencies: $$('#tfDeps option:checked').map((o) => o.value) }); $('#tfTask').value = ''; $('#tfCriteria').value = ''; toast('Task added', 'success', 1500); } catch (err) { toast(err.message, 'error'); }
+});
+$('#schedStartBtn').addEventListener('click', () => { tasks.start(); log('[scheduler] started', 'sys'); });
+$('#schedPauseBtn').addEventListener('click', () => { tasks.pause(); log('[scheduler] pausing after current task', 'sys'); });
+$('#clearTasksBtn').addEventListener('click', () => { try { if (!tasks.tasks.length) return; snapshots.take('before clearing tasks', 'user'); tasks.clear(); } catch (err) { toast(err.message, 'error'); } });
+$('#decomposeBtn').addEventListener('click', async () => {
+  const goal = $('#goalInput').value.trim(); if (!goal) { toast('Enter a goal first', 'warn'); $('#goalInput').focus(); return; }
+  const b = $('#decomposeBtn'); b.disabled = true; b.textContent = 'Planning…';
+  try { const list = await engine.decompose(goal); tasks.addMany(list); $('#goalInput').value = ''; toast(`Goal decomposed into ${list.length} tasks`, 'success'); log(`[planner] ${list.length} tasks for "${goal}"`, 'ok'); }
+  catch (err) { toast('Decomposition failed: ' + err.message, 'error'); }
+  finally { b.disabled = false; b.textContent = 'Decompose'; }
+});
+$('#goalInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#decomposeBtn').click(); } });
+
+function renderSnapshots() {
+  const box = $('#snapList'); box.textContent = '';
+  $('#snapCount').textContent = snapshots.items.length;
+  if (!snapshots.items.length) { const d = document.createElement('div'); d.className = 'muted'; d.textContent = 'Snapshots of VFS + tasks + memory + artifacts are recorded before every tool execution and task run.'; box.appendChild(d); return; }
+  [...snapshots.items].reverse().forEach((s) => {
+    const d = document.createElement('div'); d.className = 'snap';
+    d.innerHTML = `<div><div class="lbl"></div><div class="dim" style="font-size:10.5px">${escapeHtml(fmtTime(s.ts))} · ${escapeHtml(s.source)} · ${s.state.vfs ? s.state.vfs.nodes.length : 0} nodes</div></div><button class="btn sm" data-id="${escapeHtml(s.id)}">Restore</button>`;
+    $('.lbl', d).textContent = s.label;
+    box.appendChild(d);
+  });
+}
+function guardRestore() { if (busy || tasks.current) { toast('Stop the running agent/task before rolling back', 'error'); return false; } return true; }
+$('#snapList').addEventListener('click', (e) => { const b = e.target.closest('button[data-id]'); if (!b || !guardRestore()) return; try { const s = snapshots.restore(b.dataset.id); toast(`Rolled back to: ${s.label}`, 'success'); log(`[snapshot] restored "${s.label}"`, 'sys'); } catch (err) { toast(err.message, 'error'); } });
+$('#undoBtn').addEventListener('click', () => { if (!guardRestore()) return; try { const s = snapshots.undo(); toast(`Undone: ${s.label}`, 'success'); log(`[snapshot] undo → "${s.label}"`, 'sys'); } catch (err) { toast(err.message, 'error'); } });
+snapshots.on('change', renderSnapshots);
+
+/* =====================================================================
+ * UI · Settings, export / import
+ * ===================================================================== */
+$('#maxStepsInput').value = engine.maxSteps;
+$('#maxStepsInput').addEventListener('change', (e) => { engine.maxSteps = clamp(parseInt(e.target.value, 10) || 6, 1, 20); e.target.value = engine.maxSteps; Store.set('maxSteps', engine.maxSteps); });
+$('#autoApprove').checked = engine.autoApprove;
+$('#autoApprove').addEventListener('change', (e) => { engine.autoApprove = e.target.checked; Store.set('autoApprove', engine.autoApprove); toast(e.target.checked ? 'Auto-approve ON — high-risk operations run without review' : 'Human-in-the-Loop approvals enabled', e.target.checked ? 'warn' : 'success'); });
+
+function exportState() {
+  const routerCfg = {}; for (const p in router.cfg) routerCfg[p] = { enabled: router.cfg[p].enabled, model: router.cfg[p].model }; // keys deliberately excluded
+  return { app: 'agent-studio', version: 1, exportedAt: new Date().toISOString(), personas: personas.items, selectedPersona: personas.selectedId, memory: memory.facts, vfs: vfs.toJSON(), tasks: tasks.toJSON(), artifacts: artifacts.toJSON(), snapshots: snapshots.items, chat, router: { order: router.order, providers: routerCfg }, settings: { maxSteps: engine.maxSteps, autoApprove: engine.autoApprove, mockDelay: mock.delay } };
+}
+function importState(data) {
+  if (!data || data.app !== 'agent-studio') throw new Error('Not an Agent Studio export file');
+  if (busy || tasks.current) throw new Error('Stop running work before importing');
+  snapshots.take('before import', 'import');
+  if (Array.isArray(data.personas) && data.personas.length) { personas.items = data.personas.filter((p) => p && p.id && p.name).map((p) => ({ id: String(p.id), name: String(p.name), system_prompt: String(p.system_prompt || ''), knowledge_snippets: String(p.knowledge_snippets || '') })); if (!personas.items.length) personas.items = deepClone(DEFAULT_PERSONAS); personas.selectedId = personas.get(data.selectedPersona) ? data.selectedPersona : personas.items[0].id; personas.save(); }
+  if (Array.isArray(data.memory)) { memory.facts = data.memory.filter((f) => f && f.text).map((f) => ({ id: f.id || uid('mem'), text: String(f.text), source: f.source || 'import', created: f.created || Date.now(), updated: f.updated || Date.now() })); memory.save(); }
+  if (data.vfs) vfs.load(data.vfs);
+  if (data.tasks) tasks.load(data.tasks);
+  if (data.artifacts) artifacts.load(data.artifacts);
+  if (Array.isArray(data.snapshots)) { snapshots.items = data.snapshots.filter((s) => s && s.id && s.state).concat(snapshots.items.slice(-1)); snapshots.save(); }
+  if (Array.isArray(data.chat)) { chat = data.chat.filter((m) => m && (m.role === 'user' || m.role === 'assistant')); saveChat(); renderChatHistory(); }
+  if (data.router && Array.isArray(data.router.order)) { const ord = data.router.order.filter((p) => PROVIDERS[p]); Object.keys(PROVIDERS).forEach((p) => { if (!ord.includes(p)) ord.push(p); }); router.order = ord; for (const p in data.router.providers || {}) if (router.cfg[p]) { router.cfg[p].enabled = data.router.providers[p].enabled !== false; router.cfg[p].model = data.router.providers[p].model || router.cfg[p].model; } router.save(); }
+  if (data.settings) { engine.maxSteps = clamp(+data.settings.maxSteps || 6, 1, 20); Store.set('maxSteps', engine.maxSteps); $('#maxStepsInput').value = engine.maxSteps; engine.autoApprove = !!data.settings.autoApprove; Store.set('autoApprove', engine.autoApprove); $('#autoApprove').checked = engine.autoApprove; }
+}
+$('#exportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(exportState(), null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `agent-studio-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('State exported (API keys excluded)', 'success');
+});
+$('#importBtn').addEventListener('click', () => $('#importFile').click());
+$('#importFile').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { importState(JSON.parse(await f.text())); toast('State imported (snapshot taken first)', 'success'); } catch (err) { toast('Import failed: ' + err.message, 'error'); }
+});
+
+/* =====================================================================
+ * BOOT
+ * ===================================================================== */
+renderPersonaSelect(); renderRouterStatus(); renderMemory(); renderTrees(); renderArtifactView(); renderTasks(); renderSnapshots(); renderChatHistory();
+$('#termCwd').textContent = vfs.cwd + ' $';
+$('#schedState').textContent = 'idle';
+engine.on('retry', (r) => toast(`Retrying (attempt ${r.attempt + 1}) in ${r.wait}ms: ${r.error}`, 'warn', 2500));
+tasks.on('error', ({ task, error }) => toast(`Task failed: ${task.task.slice(0, 40)} — ${error.message}`, 'error'));
+log('Agent Studio ready. Type `help` for VFS commands.', 'sys');
+log(router.configured() ? `[router] priority: ${router.order.join(' → ')} → mock` : '[router] no API keys configured — offline mock engine active', 'sys');
+window.addEventListener('load', () => { if (!window.gsap) log('[ui] GSAP unavailable — animations disabled (graceful fallback)', 'dim'); else Anim.in($('header.top'), { y: -10 }); });
+
+/* Public handle for debugging / automated tests (no secrets exposed). */
+window.AgentStudio = Object.freeze({ vfs, memory, personas, artifacts, router, mock, engine, tasks, snapshots, hitl, sendMessage, exportState, importState, SSEParser, ArtifactParser, parseToolCalls, renderMarkdown, tfidfRank, parseResetValue, cooldownFromHeaders, providerStream, get busy() { return busy; } });
+})();
+</script>
+</body>
+</html>

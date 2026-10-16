@@ -1,0 +1,239 @@
+<body>
+<a href="#chatInput" class="sr-only">Skip to chat input</a>
+<div id="app">
+  <header class="top glass" role="banner">
+    <div class="brand"><h1>AGENT<span>/</span>STUDIO</h1><span class="ver">v1.0</span></div>
+
+    <div class="hgroup" title="Persona (Grok Bots)">
+      <label class="lbl" for="personaSelect">Persona</label>
+      <select id="personaSelect" class="input" aria-label="Select persona"></select>
+      <button class="btn icon" id="personaEditBtn" aria-label="Configure personas" title="Configure personas">⚙</button>
+    </div>
+
+    <div class="hgroup" aria-label="Provider router">
+      <span class="lbl">Router</span>
+      <button class="btn" id="routerBtn" aria-haspopup="dialog" aria-controls="providerModal" title="Provider router: keys, priority, cooldowns">
+        <span class="status-dot mock" id="statusDot" aria-hidden="true"></span>
+        <span id="activeProvider">mock</span>
+      </button>
+      <div id="routerStrip" class="row" style="gap:4px" aria-label="Provider status (priority order)"></div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="hgroup">
+      <label class="lbl" for="maxStepsInput">Steps</label>
+      <input id="maxStepsInput" class="input" type="number" min="1" max="20" style="width:56px" aria-label="Max ReAct steps">
+      <label class="row" style="gap:4px;font-size:11px" title="Skip Human-in-the-Loop approvals"><input type="checkbox" id="autoApprove"> auto-approve</label>
+    </div>
+    <div class="hgroup">
+      <button class="btn" id="memBtn" aria-controls="memDrawer" aria-expanded="false" title="Memory (Ctrl+M)">◉ Memory <span class="badge" id="memCount">0</span></button>
+      <button class="btn" id="exportBtn" title="Export state as JSON">Export</button>
+      <button class="btn" id="importBtn" title="Import state from JSON">Import</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <main class="panes" role="main">
+    <!-- LEFT PANE -->
+    <section class="pane glass" aria-label="Conversation and tasks">
+      <div class="tabs" role="tablist" aria-label="Left pane" data-tablist="left">
+        <button class="tab" role="tab" id="tab-chat" aria-controls="chatPanel" aria-selected="true">Chat / Execution</button>
+        <button class="tab" role="tab" id="tab-tasks" aria-controls="tasksPanel" aria-selected="false" tabindex="-1">Scheduled Goals &amp; Background Tasks</button>
+        <div class="tools"><button class="btn sm" id="clearChatBtn" title="Clear conversation">Clear</button></div>
+      </div>
+
+      <div class="tabpanel" id="chatPanel" role="tabpanel" aria-labelledby="tab-chat">
+        <div id="chatLog" class="scroll" role="log" aria-live="polite" aria-relevant="additions"></div>
+        <div class="hints" aria-label="Example prompts">
+          <button class="btn" data-prompt="Build a landing page for a coffee roastery called Ember &amp; Oak">Build landing page</button>
+          <button class="btn" data-prompt="Write a debounce function in JavaScript and save it">Write code</button>
+          <button class="btn" data-prompt="Explore the files in the workspace and summarize the README">Explore files</button>
+          <button class="btn" data-prompt="Delete the temp directory to clean up">Delete (HITL)</button>
+          <button class="btn" data-prompt="Deploy the project via the external API">External API (HITL)</button>
+          <button class="btn" data-prompt="I prefer TypeScript and dark themes. My name is Iggy. Remember that I work on agent tooling.">Teach memory</button>
+          <button class="btn" data-prompt="Run a flaky request to test retry and backoff">Retry/backoff</button>
+        </div>
+        <form class="composer" id="composer">
+          <label for="chatInput" class="sr-only">Message</label>
+          <textarea id="chatInput" class="input" placeholder="Ask the agent… (Enter to send, Shift+Enter newline, Ctrl+K focus)" rows="2"></textarea>
+          <button class="btn primary" type="submit" id="sendBtn">Send</button>
+          <button class="btn danger" type="button" id="stopBtn" disabled>Stop</button>
+        </form>
+      </div>
+
+      <div class="tabpanel" id="tasksPanel" role="tabpanel" aria-labelledby="tab-tasks" hidden>
+        <div class="inner scroll">
+          <div class="card">
+            <h3>Goal Decomposition</h3>
+            <div class="row">
+              <label class="sr-only" for="goalInput">Goal</label>
+              <input id="goalInput" class="input" style="flex:1" placeholder="e.g. Launch a marketing site for Ember &amp; Oak">
+              <button class="btn primary" id="decomposeBtn">Decompose</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Add Task</h3>
+            <form id="taskForm" class="grid2">
+              <label class="field">Task<input id="tfTask" class="input" required placeholder="Write /docs/plan.md"></label>
+              <label class="field">Acceptance criteria<input id="tfCriteria" class="input" placeholder="File /docs/plan.md exists"></label>
+              <label class="field" style="grid-column:1/-1">Dependencies (Ctrl/Cmd-click to multi-select)<select id="tfDeps" class="input" multiple size="3"></select></label>
+              <div class="row" style="grid-column:1/-1;justify-content:flex-end"><button class="btn primary" type="submit">Add task</button></div>
+            </form>
+          </div>
+          <div class="card">
+            <h3>Queue <span class="badge" id="schedState">idle</span>
+              <span class="spacer"></span>
+              <button class="btn sm primary" id="schedStartBtn">▶ Run scheduler</button>
+              <button class="btn sm" id="schedPauseBtn" disabled>❚❚ Pause</button>
+              <button class="btn sm danger" id="clearTasksBtn">Clear</button>
+            </h3>
+            <div id="taskList" style="display:flex;flex-direction:column;gap:6px"></div>
+          </div>
+          <div class="card">
+            <h3>Snapshots <span class="badge" id="snapCount">0</span><span class="spacer"></span><button class="btn sm" id="undoBtn">↶ Undo last</button></h3>
+            <div id="snapList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANE -->
+    <section class="pane glass" aria-label="Workspace">
+      <div class="tabs" role="tablist" aria-label="Workspace" data-tablist="right">
+        <button class="tab" role="tab" id="tab-arts" aria-controls="artsPanel" aria-selected="true">Artifacts</button>
+        <button class="tab" role="tab" id="tab-files" aria-controls="filesPanel" aria-selected="false" tabindex="-1">Files (VFS)</button>
+      </div>
+      <div class="tabpanel" id="artsPanel" role="tabpanel" aria-labelledby="tab-arts">
+        <div class="art-bar">
+          <div class="art-tabs" id="artTabs" role="tablist" aria-label="Artifacts"></div>
+          <label class="sr-only" for="artVersion">Version</label>
+          <select id="artVersion" class="input" aria-label="Artifact version" style="padding:3px 6px"></select>
+          <button class="btn sm" id="artViewBtn" aria-pressed="false" title="Toggle preview / source">Source</button>
+          <button class="btn sm" id="artSaveBtn" title="Save artifact to VFS">Save to VFS</button>
+          <button class="btn sm danger" id="artDelBtn" title="Remove artifact">✕</button>
+        </div>
+        <div class="stage" id="artStage">
+          <div class="empty" id="artEmpty"><div><div class="big">WORKSPACE</div>Artifacts streamed by the agent render here live,<br>in a sandboxed iframe.</div></div>
+          <iframe id="artFrame" title="Artifact preview" sandbox="allow-scripts allow-modals" referrerpolicy="no-referrer" hidden></iframe>
+          <pre class="src" id="artSource" hidden></pre>
+        </div>
+      </div>
+      <div class="tabpanel" id="filesPanel" role="tabpanel" aria-labelledby="tab-files" hidden>
+        <div class="files">
+          <nav class="tree scroll" id="fileTree" aria-label="Virtual file tree"></nav>
+          <div class="viewer">
+            <div class="vbar">
+              <strong id="viewerPath" class="muted">No file selected</strong>
+              <span class="spacer" style="flex:1"></span>
+              <button class="btn sm" id="viewerPreviewBtn" disabled aria-pressed="false">Preview</button>
+              <button class="btn sm" id="viewerSaveBtn" disabled>Save</button>
+              <button class="btn sm danger" id="viewerDelBtn" disabled>Delete</button>
+              <button class="btn sm" id="newFileBtn">+ File</button>
+            </div>
+            <div class="vstage">
+              <label class="sr-only" for="viewerText">File content</label>
+              <textarea id="viewerText" class="input" spellcheck="false" style="position:absolute;inset:0;width:100%;height:100%" disabled></textarea>
+              <iframe id="viewerFrame" title="File preview" sandbox="allow-scripts" hidden style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff"></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- TERMINAL DRAWER -->
+  <section id="terminal" class="glass collapsed" aria-label="Terminal">
+    <div class="term-head" id="termHead" role="button" tabindex="0" aria-expanded="false" aria-controls="termBody">
+      <h2>Terminal</h2><span class="muted" style="font-size:11px">logs · VFS tree · command traces</span>
+      <span class="badge" id="termCount">0</span>
+      <span class="spacer" style="flex:1"></span>
+      <kbd>Ctrl</kbd>+<kbd>`</kbd>
+      <button class="btn sm" id="termClearBtn" type="button">Clear</button>
+      <span id="termChevron">▲</span>
+    </div>
+    <div class="term-body" id="termBody">
+      <div class="term-tree scroll" id="termTree" aria-label="VFS tree (terminal)"></div>
+      <div class="term-main">
+        <div id="termLog" class="scroll" role="log" aria-live="off"></div>
+        <form class="term-input" id="termForm"><span id="termCwd">/ $</span><label for="termInput" class="sr-only">Command</label><input id="termInput" autocomplete="off" spellcheck="false" placeholder="ls, cat, echo, mkdir, rm, tree, pwd, mv, cd, touch, help"></form>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- MEMORY DRAWER -->
+<div class="scrim" id="scrim" hidden></div>
+<aside id="memDrawer" class="glass" role="dialog" aria-modal="true" aria-labelledby="memTitle" aria-hidden="true" inert>
+  <div class="dh"><h2 id="memTitle" style="font-size:24px">Memory · Dots</h2><span class="spacer" style="flex:1"></span><button class="btn icon" id="memClose" aria-label="Close memory">✕</button></div>
+  <div class="db">
+    <label class="sr-only" for="memSearch">Search memory</label>
+    <input id="memSearch" class="input" placeholder="Search facts (TF-IDF ranked)…">
+    <form id="memForm" class="row">
+      <label class="sr-only" for="memNew">New fact</label>
+      <input id="memNew" class="input" style="flex:1" placeholder="Add a fact, e.g. User prefers tabs">
+      <button class="btn primary" type="submit">Add</button>
+    </form>
+    <div class="row muted" style="font-size:11px;justify-content:space-between"><span id="memInfo"></span><button class="btn sm danger" id="memClearAll">Clear all</button></div>
+    <div id="memList" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+</aside>
+
+<!-- PERSONA MODAL -->
+<div class="modal glass" id="personaModal" role="dialog" aria-modal="true" aria-labelledby="personaTitle" hidden>
+  <div class="mh"><h2 id="personaTitle">Grok Bots · Personas</h2><span class="spacer" style="flex:1"></span><button class="btn icon" data-close aria-label="Close">✕</button></div>
+  <div class="mb">
+    <div class="persona-layout">
+      <div><div class="plist" id="personaList"></div><button class="btn" id="personaNew" style="margin-top:8px;width:100%">+ New persona</button></div>
+      <form id="personaForm" style="display:flex;flex-direction:column;gap:10px">
+        <label class="field">Name<input id="pfName" class="input" required maxlength="60"></label>
+        <label class="field">System prompt<textarea id="pfPrompt" class="input" rows="6"></textarea></label>
+        <label class="field">Knowledge snippets (separate chunks with a blank line or ---)<textarea id="pfKnow" class="input" rows="7"></textarea></label>
+        <div class="row" style="justify-content:space-between">
+          <button class="btn danger" type="button" id="personaDelete">Delete</button>
+          <div class="row"><button class="btn" type="button" id="personaUse">Use this persona</button><button class="btn primary" type="submit">Save</button></div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- HITL MODAL -->
+<div class="modal glass" id="hitlModal" role="alertdialog" aria-modal="true" aria-labelledby="hitlTitle" aria-describedby="hitlReason" hidden>
+  <div class="mh"><h2 id="hitlTitle">Human-in-the-Loop · Approval Required</h2><span class="spacer" style="flex:1"></span><span class="badge" id="hitlQueue"></span></div>
+  <div class="mb">
+    <div class="risk" id="hitlReason"></div>
+    <div class="row muted" style="font-size:12px"><span>Operation:</span><strong id="hitlOp" style="color:#fff"></strong><span id="hitlSource"></span></div>
+    <label class="field">Payload (JSON) <span id="hitlEditHint" class="dim" style="text-transform:none"></span><textarea id="hitlPayload" class="input" readonly spellcheck="false"></textarea></label>
+  </div>
+  <div class="mf">
+    <button class="btn danger" id="hitlReject">Reject</button>
+    <button class="btn" id="hitlEdit" aria-pressed="false">Edit</button>
+    <button class="btn primary" id="hitlApprove">Approve</button>
+  </div>
+</div>
+
+<!-- PROMPT MODAL (generic input) -->
+<div class="modal glass" id="promptModal" role="dialog" aria-modal="true" aria-labelledby="promptTitle" hidden style="width:min(480px,calc(100vw - 20px))">
+  <div class="mh"><h2 id="promptTitle">Input</h2></div>
+  <form class="mb" id="promptForm"><label class="field" id="promptLabel">Value<input id="promptInput" class="input"></label></form>
+  <div class="mf"><button class="btn" id="promptCancel">Cancel</button><button class="btn primary" id="promptOk">OK</button></div>
+</div>
+
+<!-- PROVIDER ROUTER MODAL -->
+<div class="modal glass" id="providerModal" role="dialog" aria-modal="true" aria-labelledby="providerTitle" hidden style="width:min(920px,calc(100vw - 20px))">
+  <div class="mh"><h2 id="providerTitle">Provider Router</h2><span class="muted" style="font-size:11px">keys stay in this browser's localStorage only · never exported</span><span class="spacer" style="flex:1"></span><button class="btn icon" data-close aria-label="Close">✕</button></div>
+  <div class="mb">
+    <div class="row muted" style="font-size:12px">Requests try providers top→bottom. On 429 / 5xx / network errors the router rotates keys (round-robin) and falls through; cooldowns honour <code>Retry-After</code> and <code>x-ratelimit-*</code> headers. The offline mock is always the final fallback.</div>
+    <div id="providerRows" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="card row" style="justify-content:space-between">
+      <div><strong>Offline mock engine</strong> <span class="badge">final fallback</span></div>
+      <label class="row" style="gap:4px;font-size:12px"><input type="checkbox" id="forceMock"> force mock (ignore keys)</label>
+      <label class="row" style="gap:4px;font-size:12px">chunk delay <input id="mockDelay" type="number" min="0" max="200" class="input" style="width:64px"> ms</label>
+      <button class="btn sm" id="resetCooldowns">Reset all cooldowns</button>
+    </div>
+  </div>
+  <div class="mf"><button class="btn primary" data-close>Done</button></div>
+</div>
+
+<div id="toasts" aria-live="assertive" role="status"></div>
